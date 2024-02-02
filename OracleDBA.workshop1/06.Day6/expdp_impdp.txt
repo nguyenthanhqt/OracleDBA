@@ -1,0 +1,291 @@
+[oracle@server1 ~]$ sqlplus sys/oracle@localhost:1521/orcl as sysdba
+
+SQL*Plus: Release 19.0.0.0.0 - Production on Thu May 26 19:26:09 2022
+Version 19.3.0.0.0
+
+Copyright (c) 1982, 2019, Oracle.  All rights reserved.
+
+
+Connected to:
+Oracle Database 19c Enterprise Edition Release 19.0.0.0.0 - Production
+Version 19.3.0.0.0
+
+SQL> SELECT * from dba_directories WHERE directory_name = 'DATA_PUMP_DIR';
+
+OWNER
+--------------------------------------------------------------------------------
+DIRECTORY_NAME
+--------------------------------------------------------------------------------
+DIRECTORY_PATH
+--------------------------------------------------------------------------------
+ORIGIN_CON_ID
+-------------
+SYS
+DATA_PUMP_DIR
+/u01/app/oracle/admin/orclcdb/dpdump/DC0C40B7013D152EE0530100007F6426
+	    1
+SQL> create directory tmp_dir as '/tmp';
+
+Directory created.
+
+SQL> exit
+Disconnected from Oracle Database 19c Enterprise Edition Release 19.0.0.0.0 - Production
+Version 19.3.0.0.0
+[oracle@server1 ~]$ expdp system/oracle@localhost:1521/orcl dumpfile=HREXP%U.dmp directory=TMP_DIR logfile=hrexp.log SCHEMAS=HR
+
+Export: Release 19.0.0.0.0 - Production on Thu May 26 19:28:53 2022
+Version 19.3.0.0.0
+
+Copyright (c) 1982, 2019, Oracle and/or its affiliates.  All rights reserved.
+
+Connected to: Oracle Database 19c Enterprise Edition Release 19.0.0.0.0 - Production
+Starting "SYSTEM"."SYS_EXPORT_SCHEMA_01":  system/********@localhost:1521/orcl dumpfile=HREXP%U.dmp directory=TMP_DIR logfile=hrexp.log SCHEMAS=HR 
+Processing object type SCHEMA_EXPORT/TABLE/TABLE_DATA
+Processing object type SCHEMA_EXPORT/TABLE/INDEX/STATISTICS/INDEX_STATISTICS
+Processing object type SCHEMA_EXPORT/TABLE/STATISTICS/TABLE_STATISTICS
+Processing object type SCHEMA_EXPORT/STATISTICS/MARKER
+Processing object type SCHEMA_EXPORT/USER
+Processing object type SCHEMA_EXPORT/SYSTEM_GRANT
+Processing object type SCHEMA_EXPORT/ROLE_GRANT
+Processing object type SCHEMA_EXPORT/DEFAULT_ROLE
+Processing object type SCHEMA_EXPORT/TABLESPACE_QUOTA
+Processing object type SCHEMA_EXPORT/PRE_SCHEMA/PROCACT_SCHEMA
+Processing object type SCHEMA_EXPORT/DB_LINK
+Processing object type SCHEMA_EXPORT/SEQUENCE/SEQUENCE
+Processing object type SCHEMA_EXPORT/TABLE/TABLE
+Processing object type SCHEMA_EXPORT/TABLE/GRANT/OWNER_GRANT/OBJECT_GRANT
+Processing object type SCHEMA_EXPORT/TABLE/COMMENT
+Processing object type SCHEMA_EXPORT/TABLE/FGA_POLICY
+Processing object type SCHEMA_EXPORT/PROCEDURE/PROCEDURE
+Processing object type SCHEMA_EXPORT/PROCEDURE/ALTER_PROCEDURE
+Processing object type SCHEMA_EXPORT/VIEW/VIEW
+Processing object type SCHEMA_EXPORT/TABLE/INDEX/INDEX
+Processing object type SCHEMA_EXPORT/TABLE/CONSTRAINT/CONSTRAINT
+Processing object type SCHEMA_EXPORT/TABLE/CONSTRAINT/REF_CONSTRAINT
+Processing object type SCHEMA_EXPORT/TABLE/TRIGGER
+. . exported "HR"."CUSTOMERS"                            10.27 MB   55500 rows
+. . exported "HR"."BIG_ROWS"                             447.7 KB     100 rows
+. . exported "HR"."EMPLOYEES"                            17.07 KB     107 rows
+. . exported "HR"."LOCATIONS"                            8.437 KB      23 rows
+. . exported "HR"."JOB_HISTORY"                          7.195 KB      10 rows
+. . exported "HR"."JOBS"                                 7.109 KB      19 rows
+. . exported "HR"."DEPARTMENTS"                          7.125 KB      27 rows
+. . exported "HR"."TEST"                                 7.117 KB      27 rows
+. . exported "HR"."TEST_DEPT"                            7.125 KB      27 rows
+. . exported "HR"."COUNTRIES"                            6.367 KB      25 rows
+. . exported "HR"."REGIONS"                              5.546 KB       4 rows
+. . exported "HR"."TAB_16K"                              5.046 KB       1 rows
+. . exported "HR"."XYZ"                                  5.046 KB       1 rows
+. . exported "HR"."ABC"                                      0 KB       0 rows
+. . exported "HR"."DEPT"                                 5.937 KB       2 rows
+. . exported "HR"."EMPLOYEE"                             6.828 KB       3 rows
+Master table "SYSTEM"."SYS_EXPORT_SCHEMA_01" successfully loaded/unloaded
+******************************************************************************
+Dump file set for SYSTEM.SYS_EXPORT_SCHEMA_01 is:
+  /tmp/HREXP01.dmp
+Job "SYSTEM"."SYS_EXPORT_SCHEMA_01" successfully completed at Thu May 26 19:30:14 2022 elapsed 0 00:01:16
+
+[oracle@server1 ~]$ sqlplus / as sysdba
+
+SQL*Plus: Release 19.0.0.0.0 - Production on Thu May 26 19:30:44 2022
+Version 19.3.0.0.0
+
+Copyright (c) 1982, 2019, Oracle.  All rights reserved.
+
+
+Connected to:
+Oracle Database 19c Enterprise Edition Release 19.0.0.0.0 - Production
+Version 19.3.0.0.0
+
+SQL> show pdbs
+
+    CON_ID CON_NAME			  OPEN MODE  RESTRICTED
+---------- ------------------------------ ---------- ----------
+	 2 PDB$SEED			  READ ONLY  NO
+	 3 ORCL 			  READ WRITE NO
+	 4 ABC_NEW			  MOUNTED
+	 6 DEV				  MOUNTED
+	 7 ORCLPDB3			  READ WRITE NO
+	 8 NONCDB			  MOUNTED
+SQL> alter pluggable database dev open;
+
+Pluggable database altered.
+
+SQL> alter session set container=dev;
+
+Session altered.
+
+SQL> select tablespace_name from dba_tablespaces;
+
+TABLESPACE_NAME
+------------------------------
+SYSTEM
+SYSAUX
+UNDOTBS1
+TEMP
+USERS
+INDEX_TBS
+
+6 rows selected.
+
+SQL> select name from v$datafile;
+
+NAME
+--------------------------------------------------------------------------------
+/u01/app/oracle/oradata/ORCLCDB/DEV/system01.dbf
+/u01/app/oracle/oradata/ORCLCDB/DEV/sysaux01.dbf
+/u01/app/oracle/oradata/ORCLCDB/DEV/undotbs01.dbf
+/u01/app/oracle/oradata/ORCLCDB/DEV/users01.dbf
+/u01/app/oracle/oradata/ORCLCDB/DEV/index01.dbf
+
+SQL> create tablespace example datafile '/u01/app/oracle/oradata/ORCLCDB/DEV/example01.dbf' size 10M autoextend on next 1m maxsize unlimited;
+
+Tablespace created.
+
+SQL> create user hr_dev identified by oracle;
+
+User created.
+
+SQL> grant connect,resource,unlimited tablespace to hr_dev;
+
+Grant succeeded.
+
+SQL> alter user hr_dev default tablespace example;
+
+User altered.
+
+SQL> exit
+Disconnected from Oracle Database 19c Enterprise Edition Release 19.0.0.0.0 - Production
+Version 19.3.0.0.0
+[oracle@server1 ~]$ sqlplus / as sysdba
+
+SQL*Plus: Release 19.0.0.0.0 - Production on Thu May 26 19:35:15 2022
+Version 19.3.0.0.0
+
+Copyright (c) 1982, 2019, Oracle.  All rights reserved.
+
+
+Connected to:
+Oracle Database 19c Enterprise Edition Release 19.0.0.0.0 - Production
+Version 19.3.0.0.0
+
+SQL> exit
+Disconnected from Oracle Database 19c Enterprise Edition Release 19.0.0.0.0 - Production
+Version 19.3.0.0.0
+[oracle@server1 ~]$ sqlplus sys/oracle@localhost:1521/dev as sysdba
+SQL*Plus: Release 19.0.0.0.0 - Production on Thu May 26 19:35:30 2022
+Version 19.3.0.0.0
+
+Copyright (c) 1982, 2019, Oracle.  All rights reserved.
+
+
+Connected to:
+Oracle Database 19c Enterprise Edition Release 19.0.0.0.0 - Production
+Version 19.3.0.0.0
+
+SQL> create directory tmp_dir as '/tmp';
+
+Directory created.
+
+SQL> exit
+Disconnected from Oracle Database 19c Enterprise Edition Release 19.0.0.0.0 - Production
+Version 19.3.0.0.0
+[oracle@server1 ~]$ impdp system/oracle@localhost:1521/dev DIRECTORY=tmp_dir DUMPFILE=HREXP01.dmp REMAP_SCHEMA=hr:hr_dev REMAP_TABLESPACE=USERS:EXAMPLE LOGFILE=empimport.log
+
+Import: Release 19.0.0.0.0 - Production on Thu May 26 19:37:14 2022
+Version 19.3.0.0.0
+
+Copyright (c) 1982, 2019, Oracle and/or its affiliates.  All rights reserved.
+
+Connected to: Oracle Database 19c Enterprise Edition Release 19.0.0.0.0 - Production
+Master table "SYSTEM"."SYS_IMPORT_FULL_01" successfully loaded/unloaded
+Starting "SYSTEM"."SYS_IMPORT_FULL_01":  system/********@localhost:1521/dev DIRECTORY=tmp_dir DUMPFILE=HREXP01.dmp REMAP_SCHEMA=hr:hr_dev REMAP_TABLESPACE=USERS:EXAMPLE LOGFILE=empimport.log 
+Processing object type SCHEMA_EXPORT/USER
+ORA-31684: Object type USER:"HR_DEV" already exists
+
+Processing object type SCHEMA_EXPORT/SYSTEM_GRANT
+Processing object type SCHEMA_EXPORT/ROLE_GRANT
+Processing object type SCHEMA_EXPORT/DEFAULT_ROLE
+Processing object type SCHEMA_EXPORT/TABLESPACE_QUOTA
+Processing object type SCHEMA_EXPORT/PRE_SCHEMA/PROCACT_SCHEMA
+Processing object type SCHEMA_EXPORT/DB_LINK
+Processing object type SCHEMA_EXPORT/SEQUENCE/SEQUENCE
+Processing object type SCHEMA_EXPORT/TABLE/TABLE
+ORA-39083: Object type TABLE:"HR_DEV"."CUSTOMERS" failed to create with error:
+ORA-00959: tablespace 'TRANSPORT_TBS' does not exist
+
+Failing sql is:
+CREATE TABLE "HR_DEV"."CUSTOMERS" ("CUST_ID" NUMBER NOT NULL ENABLE, "CUST_FIRST_NAME" VARCHAR2(20 BYTE) NOT NULL ENABLE, "CUST_LAST_NAME" VARCHAR2(40 BYTE) NOT NULL ENABLE, "CUST_GENDER" CHAR(1 BYTE) NOT NULL ENABLE, "CUST_YEAR_OF_BIRTH" NUMBER(4,0) NOT NULL ENABLE, "CUST_MARITAL_STATUS" VARCHAR2(20 BYTE), "CUST_STREET_ADDRESS" VARCHAR2(40 BYTE) NOT NULL ENABLE, "CUST_POSTAL_CODE" VARCHAR2(10 BYTE) NOT NULL ENABLE, "CUST_CITY" VARCHAR2(30 BYTE) NOT NULL ENABLE, "CUST_CITY_ID" NUMBER NOT NULL ENABLE, "CUST_STATE_PROVINCE" VARCHAR2(40 BYTE) NOT NULL ENABLE, "CUST_STATE_PROVINCE_ID" NUMBER NOT NULL ENABLE, "COUNTRY_ID" NUMBER NOT NULL ENABLE, "CUST_MAIN_PHONE_NUMBER" VARCHAR2(25 BYTE) NOT NULL ENABLE, "CUST_INCOME_LEVEL" VARCHAR2(30 BYTE), "CUST_CREDIT_LIMIT" NUMBER, "CUST_EMAIL" VARCHAR2(50 BYTE), "CUST_TOTAL" VARCHAR2(14 BYTE) NOT NULL ENABLE, "CUST_TOTAL_ID" NUMBER NOT NULL ENABLE, "CUST_SRC_ID" NUMBER, "CUST_EFF_FROM" DATE, "CUST_EFF_TO" DATE, "CUST_VALID" VARCHAR2(1 BYTE)) SEGMENT CREATION IMMEDIATE PCTFREE 10 PCTUSED 40 INITRANS 1 MAXTRANS 255  NOCOMPRESS LOGGING STORAGE(INITIAL 65536 NEXT 1048576 MINEXTENTS 1 MAXEXTENTS 2147483645 PCTINCREASE 0 FREELISTS 1 FREELIST GROUPS 1 BUFFER_POOL DEFAULT FLASH_CACHE DEFAULT CELL_FLASH_CACHE DEFAULT) TABLESPACE "TRANSPORT_TBS" 
+
+ORA-39083: Object type TABLE:"HR_DEV"."TAB_16K" failed to create with error:
+ORA-00959: tablespace 'TBS_16K' does not exist
+
+Failing sql is:
+CREATE TABLE "HR_DEV"."TAB_16K" ("C1" NUMBER) SEGMENT CREATION IMMEDIATE PCTFREE 10 PCTUSED 40 INITRANS 1 MAXTRANS 255  NOCOMPRESS LOGGING STORAGE(INITIAL 65536 NEXT 1048576 MINEXTENTS 1 MAXEXTENTS 2147483645 PCTINCREASE 0 FREELISTS 1 FREELIST GROUPS 1 BUFFER_POOL DEFAULT FLASH_CACHE DEFAULT CELL_FLASH_CACHE DEFAULT) TABLESPACE "TBS_16K" 
+
+Processing object type SCHEMA_EXPORT/TABLE/TABLE_DATA
+. . imported "HR_DEV"."BIG_ROWS"                         447.7 KB     100 rows
+. . imported "HR_DEV"."EMPLOYEES"                        17.07 KB     107 rows
+. . imported "HR_DEV"."LOCATIONS"                        8.437 KB      23 rows
+. . imported "HR_DEV"."JOB_HISTORY"                      7.195 KB      10 rows
+. . imported "HR_DEV"."JOBS"                             7.109 KB      19 rows
+. . imported "HR_DEV"."DEPARTMENTS"                      7.125 KB      27 rows
+. . imported "HR_DEV"."TEST"                             7.117 KB      27 rows
+. . imported "HR_DEV"."TEST_DEPT"                        7.125 KB      27 rows
+. . imported "HR_DEV"."COUNTRIES"                        6.367 KB      25 rows
+. . imported "HR_DEV"."REGIONS"                          5.546 KB       4 rows
+. . imported "HR_DEV"."XYZ"                              5.046 KB       1 rows
+. . imported "HR_DEV"."ABC"                                  0 KB       0 rows
+. . imported "HR_DEV"."DEPT"                             5.937 KB       2 rows
+. . imported "HR_DEV"."EMPLOYEE"                         6.828 KB       3 rows
+Processing object type SCHEMA_EXPORT/TABLE/GRANT/OWNER_GRANT/OBJECT_GRANT
+ORA-39083: Object type OBJECT_GRANT failed to create with error:
+ORA-01917: user or role 'ABC' does not exist
+
+Failing sql is:
+GRANT DELETE ON "HR_DEV"."JOBS" TO "ABC" WITH GRANT OPTION
+
+ORA-39083: Object type OBJECT_GRANT failed to create with error:
+ORA-01917: user or role 'ABC' does not exist
+
+Failing sql is:
+GRANT INSERT ON "HR_DEV"."JOBS" TO "ABC" WITH GRANT OPTION
+
+ORA-39083: Object type OBJECT_GRANT failed to create with error:
+ORA-01917: user or role 'ABC' does not exist
+
+Failing sql is:
+GRANT SELECT ON "HR_DEV"."JOBS" TO "ABC" WITH GRANT OPTION
+
+ORA-39083: Object type OBJECT_GRANT failed to create with error:
+ORA-01917: user or role 'ABC' does not exist
+
+Failing sql is:
+GRANT UPDATE ON "HR_DEV"."JOBS" TO "ABC" WITH GRANT OPTION
+
+ORA-39083: Object type OBJECT_GRANT failed to create with error:
+ORA-01917: user or role 'CLERK' does not exist
+
+Failing sql is:
+GRANT SELECT ON "HR_DEV"."EMPLOYEES" TO "CLERK"
+
+ORA-39083: Object type OBJECT_GRANT failed to create with error:
+ORA-01917: user or role 'R_NV' does not exist
+
+Failing sql is:
+GRANT SELECT ON "HR_DEV"."EMPLOYEES" TO "R_NV"
+
+Processing object type SCHEMA_EXPORT/TABLE/COMMENT
+Processing object type SCHEMA_EXPORT/TABLE/FGA_POLICY
+Processing object type SCHEMA_EXPORT/PROCEDURE/PROCEDURE
+Processing object type SCHEMA_EXPORT/PROCEDURE/ALTER_PROCEDURE
+Processing object type SCHEMA_EXPORT/VIEW/VIEW
+Processing object type SCHEMA_EXPORT/TABLE/INDEX/INDEX
+Processing object type SCHEMA_EXPORT/TABLE/CONSTRAINT/CONSTRAINT
+Processing object type SCHEMA_EXPORT/TABLE/INDEX/STATISTICS/INDEX_STATISTICS
+Processing object type SCHEMA_EXPORT/TABLE/CONSTRAINT/REF_CONSTRAINT
+Processing object type SCHEMA_EXPORT/TABLE/TRIGGER
+Processing object type SCHEMA_EXPORT/TABLE/STATISTICS/TABLE_STATISTICS
+Processing object type SCHEMA_EXPORT/STATISTICS/MARKER
+Job "SYSTEM"."SYS_IMPORT_FULL_01" completed with 9 error(s) at Thu May 26 19:37:50 2022 elapsed 0 00:00:30
+

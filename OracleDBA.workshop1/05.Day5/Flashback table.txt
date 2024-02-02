@@ -1,0 +1,32 @@
+SQL> -- Flashback table --
+SQL> select to_char(sysdate,'dd-mm-yyyy:hh24:mi:ss') from dual;
+
+TO_CHAR(SYSDATE,'DD
+-------------------
+24-07-2013:18:50:41
+
+SQL> update employees set salary=1000;
+
+107 rows updated.
+
+SQL> commit;
+
+Commit complete.
+
+SQL> alter table employees enable row movement;
+
+Table altered.
+
+SQL> flashback table employees to timestamp to_timestamp('24-07-2013:18:50:41','dd-mm-yyyy:hh24:mi:ss');
+
+Flashback complete.
+
+SQL> select salary from employees where rownum<=3;
+
+    SALARY
+----------
+      2600
+      2600
+      4400
+
+SQL>

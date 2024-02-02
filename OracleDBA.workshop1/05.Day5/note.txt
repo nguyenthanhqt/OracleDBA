@@ -1,0 +1,8 @@
+1. Kiến trúc lưu trữ hệ thống oracle. tablespase; datatafile; 
+2.Bigfile; defaul tablespace; tempfile; move datafile oline;
+create and management tablespace;  tempfile;
+3. block; row change and migration; redifinition table; bibmapblock; allocation extents; using unusable indexes; using temporary table; table compression; recliming  space;
+4. resumable; undo, redo; seucrety:
+
+set autotrace on;
+alter system undo_

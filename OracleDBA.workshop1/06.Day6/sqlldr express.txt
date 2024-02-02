@@ -1,0 +1,25 @@
+sqlplus hr/hr@localhost:1521/orcl
+create table employee(emp_id number,emp_name varchar2(40),skill varchar2(20),sal number,birth_day date);
+[oracle@host01 ~]$ vi employee.dat
+100,Hari,MCA,5000,25-JAN-91
+200,Karthi,Technology,5500,25-JAN-91
+300,Sunil,Technology,7000,25-JAN-91
+--
+[oracle@host01 ~]$ sqlldr hr/hr@localhost:1521/orcl table=employee
+
+SQL*Loader: Release 12.1.0.2.0 - Production on Sat Jul 27 11:47:44 2019
+
+Copyright (c) 1982, 2014, Oracle and/or its affiliates.  All rights reserved.
+
+Express Mode Load, Table: EMPLOYEE
+Path used:      External Table, DEGREE_OF_PARALLELISM=AUTO
+
+Table EMPLOYEE:
+  3 Rows successfully loaded.
+
+Check the log files:
+  employee.log
+  employee_%p.log_xt
+for more information about the load.
+
+-- Kiem tra

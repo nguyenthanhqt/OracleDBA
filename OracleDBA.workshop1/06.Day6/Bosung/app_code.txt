@@ -1,0 +1,763 @@
+[oracle@server1 ~]$ sqlplus sh/sh@localhost:1521/orcl
+
+SQL*Plus: Release 19.0.0.0.0 - Production on Sat Jan 27 08:38:53 2024
+Version 19.3.0.0.0
+
+Copyright (c) 1982, 2019, Oracle.  All rights reserved.
+
+Last Successful login time: Sat Jan 20 2024 14:42:34 +07:00
+
+Connected to:
+Oracle Database 19c Enterprise Edition Release 19.0.0.0.0 - Production
+Version 19.3.0.0.0
+
+SQL> desc customers
+ Name					   Null?    Type
+ ----------------------------------------- -------- ----------------------------
+ CUST_ID				   NOT NULL NUMBER
+ CUST_FIRST_NAME			   NOT NULL VARCHAR2(20)
+ CUST_LAST_NAME 			   NOT NULL VARCHAR2(40)
+ CUST_GENDER				   NOT NULL CHAR(1)
+ CUST_YEAR_OF_BIRTH			   NOT NULL NUMBER(4)
+ CUST_MARITAL_STATUS				    VARCHAR2(20)
+ CUST_STREET_ADDRESS			   NOT NULL VARCHAR2(40)
+ CUST_POSTAL_CODE			   NOT NULL VARCHAR2(10)
+ CUST_CITY				   NOT NULL VARCHAR2(30)
+ CUST_CITY_ID				   NOT NULL NUMBER
+ CUST_STATE_PROVINCE			   NOT NULL VARCHAR2(40)
+ CUST_STATE_PROVINCE_ID 		   NOT NULL NUMBER
+ COUNTRY_ID				   NOT NULL NUMBER
+ CUST_MAIN_PHONE_NUMBER 		   NOT NULL VARCHAR2(25)
+ CUST_INCOME_LEVEL				    VARCHAR2(30)
+ CUST_CREDIT_LIMIT				    NUMBER
+ CUST_EMAIL					    VARCHAR2(50)
+ CUST_TOTAL				   NOT NULL VARCHAR2(14)
+ CUST_TOTAL_ID				   NOT NULL NUMBER
+ CUST_SRC_ID					    NUMBER
+ CUST_EFF_FROM					    DATE
+ CUST_EFF_TO					    DATE
+ CUST_VALID					    VARCHAR2(1)
+
+SQL> select CUST_STATE_PROVINCE from customers where rownum<=3;
+
+CUST_STATE_PROVINCE
+----------------------------------------
+Gelderland
+Noord-Holland
+Limburg
+
+SQL> select CUST_POSTAL_CODE from customers where rownum<=3;
+
+CUST_POSTA
+----------
+60332
+55406
+34077
+
+SQL> select cust_last_name from customers where CUST_POSTAL_CODE=60332;
+
+CUST_LAST_NAME
+----------------------------------------
+Ruddy
+Walsh
+Harris
+Peebles
+Wolsey
+Sampler
+Rumfeldt
+Robinson
+Newman
+Hagan
+Handkins
+
+CUST_LAST_NAME
+----------------------------------------
+Jansen
+Roman
+Cox
+Gimes
+Pinkston
+Smyth
+Bane
+Daley
+Kitts
+Batterton
+Pardue
+
+CUST_LAST_NAME
+----------------------------------------
+Germonds
+Ness
+Geiss
+Ritch
+Fepoi
+Lusk
+Ling
+Gilmour
+Utterback
+Orrson
+Janney
+
+CUST_LAST_NAME
+----------------------------------------
+Haske
+Lauder
+Wensel
+Hamrick
+Woodman
+Webber
+Jacobs
+Clipp
+Luna
+Stocks
+Lassiter
+
+CUST_LAST_NAME
+----------------------------------------
+Mansfield
+Duke
+Ivey
+Lickey
+Eubank
+Ingold
+Dahl
+Pettit
+Parker
+Rodrick
+Lake
+
+CUST_LAST_NAME
+----------------------------------------
+Edmond
+Barron
+Cummins
+Valdez
+Overton
+Fairfax
+Elmore
+Odenwalld
+Park
+Haley
+Hummer
+
+CUST_LAST_NAME
+----------------------------------------
+Damato
+Naber
+Kuhler
+Hardy
+Oppy
+Petrella
+Lucca
+Manning
+Johnson
+Sandburg
+Newsome
+
+CUST_LAST_NAME
+----------------------------------------
+Paine
+Hardesty
+Barden
+Markman
+Lease
+Barajas
+Lamar
+Brown
+Tavener
+Gentile
+Chang
+
+CUST_LAST_NAME
+----------------------------------------
+Banas
+Dutton
+Vesper
+Lamay
+Berry
+Salem
+Warner
+Ireland
+Maine
+Harris
+Grey
+
+CUST_LAST_NAME
+----------------------------------------
+Lillis
+Weston
+Malloney
+Majors
+Welk
+Cole
+Taylor
+Leigh
+Wan
+Neila
+Robbins
+
+CUST_LAST_NAME
+----------------------------------------
+Zimmerman
+Kitts
+Farmer
+Lindegreen
+Cox
+Braun
+Rothman
+Cain
+Lesley
+Walker
+Banfield
+
+CUST_LAST_NAME
+----------------------------------------
+Glassman
+Jones
+Ardena
+Chinn
+Ball
+Husky
+Petrella
+Rodgers
+Lyles
+Sands
+Dunford
+
+CUST_LAST_NAME
+----------------------------------------
+Brooks
+Robbinette
+Cartwright
+Ogletree
+Oakfield
+Crisp
+Kirwin
+Roche
+Gravel
+Wiseman
+John
+
+CUST_LAST_NAME
+----------------------------------------
+Alexander
+Elliott
+Adams
+King
+Daily
+Barone
+Isaacs
+Lovett
+Lau
+Mcevoy
+Cackett
+
+154 rows selected.
+
+SQL> select * from table(dbms_xplan.display_cursor());
+
+PLAN_TABLE_OUTPUT
+--------------------------------------------------------------------------------
+SQL_ID	7fbgmadjpcq9y, child number 0
+-------------------------------------
+select cust_last_name from customers where CUST_POSTAL_CODE=60332
+
+Plan hash value: 2008213504
+
+-------------------------------------------------------------------------------
+| Id  | Operation	  | Name      | Rows  | Bytes | Cost (%CPU)| Time     |
+-------------------------------------------------------------------------------
+|   0 | SELECT STATEMENT  |	      |       |       |   423 (100)|	      |
+|*  1 |  TABLE ACCESS FULL| CUSTOMERS |    89 |  1246 |   423	(1)| 00:00:01 |
+
+PLAN_TABLE_OUTPUT
+--------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
+
+Predicate Information (identified by operation id):
+---------------------------------------------------
+
+   1 - filter(TO_NUMBER("CUST_POSTAL_CODE")=60332)
+
+
+18 rows selected.
+
+SQL> create index cust_postal_cost on customers(CUST_POSTAL_CODE);
+
+Index created.
+
+SQL> select cust_last_name from customers where CUST_POSTAL_CODE=60332;
+
+CUST_LAST_NAME
+----------------------------------------
+Ruddy
+Walsh
+Harris
+Peebles
+Wolsey
+Sampler
+Rumfeldt
+Robinson
+Newman
+Hagan
+Handkins
+
+CUST_LAST_NAME
+----------------------------------------
+Jansen
+Roman
+Cox
+Gimes
+Pinkston
+Smyth
+Bane
+Daley
+Kitts
+Batterton
+Pardue
+
+CUST_LAST_NAME
+----------------------------------------
+Germonds
+Ness
+Geiss
+Ritch
+Fepoi
+Lusk
+Ling
+Gilmour
+Utterback
+Orrson
+Janney
+
+CUST_LAST_NAME
+----------------------------------------
+Haske
+Lauder
+Wensel
+Hamrick
+Woodman
+Webber
+Jacobs
+Clipp
+Luna
+Stocks
+Lassiter
+
+CUST_LAST_NAME
+----------------------------------------
+Mansfield
+Duke
+Ivey
+Lickey
+Eubank
+Ingold
+Dahl
+Pettit
+Parker
+Rodrick
+Lake
+
+CUST_LAST_NAME
+----------------------------------------
+Edmond
+Barron
+Cummins
+Valdez
+Overton
+Fairfax
+Elmore
+Odenwalld
+Park
+Haley
+Hummer
+
+CUST_LAST_NAME
+----------------------------------------
+Damato
+Naber
+Kuhler
+Hardy
+Oppy
+Petrella
+Lucca
+Manning
+Johnson
+Sandburg
+Newsome
+
+CUST_LAST_NAME
+----------------------------------------
+Paine
+Hardesty
+Barden
+Markman
+Lease
+Barajas
+Lamar
+Brown
+Tavener
+Gentile
+Chang
+
+CUST_LAST_NAME
+----------------------------------------
+Banas
+Dutton
+Vesper
+Lamay
+Berry
+Salem
+Warner
+Ireland
+Maine
+Harris
+Grey
+
+CUST_LAST_NAME
+----------------------------------------
+Lillis
+Weston
+Malloney
+Majors
+Welk
+Cole
+Taylor
+Leigh
+Wan
+Neila
+Robbins
+
+CUST_LAST_NAME
+----------------------------------------
+Zimmerman
+Kitts
+Farmer
+Lindegreen
+Cox
+Braun
+Rothman
+Cain
+Lesley
+Walker
+Banfield
+
+CUST_LAST_NAME
+----------------------------------------
+Glassman
+Jones
+Ardena
+Chinn
+Ball
+Husky
+Petrella
+Rodgers
+Lyles
+Sands
+Dunford
+
+CUST_LAST_NAME
+----------------------------------------
+Brooks
+Robbinette
+Cartwright
+Ogletree
+Oakfield
+Crisp
+Kirwin
+Roche
+Gravel
+Wiseman
+John
+
+CUST_LAST_NAME
+----------------------------------------
+Alexander
+Elliott
+Adams
+King
+Daily
+Barone
+Isaacs
+Lovett
+Lau
+Mcevoy
+Cackett
+
+154 rows selected.
+
+SQL> select * from table(dbms_xplan.display_cursor());
+
+PLAN_TABLE_OUTPUT
+--------------------------------------------------------------------------------
+SQL_ID	7fbgmadjpcq9y, child number 0
+-------------------------------------
+select cust_last_name from customers where CUST_POSTAL_CODE=60332
+
+Plan hash value: 2008213504
+
+-------------------------------------------------------------------------------
+| Id  | Operation	  | Name      | Rows  | Bytes | Cost (%CPU)| Time     |
+-------------------------------------------------------------------------------
+|   0 | SELECT STATEMENT  |	      |       |       |   423 (100)|	      |
+|*  1 |  TABLE ACCESS FULL| CUSTOMERS |    89 |  1246 |   423	(1)| 00:00:01 |
+
+PLAN_TABLE_OUTPUT
+--------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
+
+Predicate Information (identified by operation id):
+---------------------------------------------------
+
+   1 - filter(TO_NUMBER("CUST_POSTAL_CODE")=60332)
+
+
+18 rows selected.
+
+SQL> select cust_last_name from customers where CUST_POSTAL_CODE='60332';
+
+CUST_LAST_NAME
+----------------------------------------
+Ruddy
+Walsh
+Harris
+Peebles
+Wolsey
+Sampler
+Rumfeldt
+Robinson
+Newman
+Hagan
+Handkins
+
+CUST_LAST_NAME
+----------------------------------------
+Jansen
+Roman
+Cox
+Gimes
+Pinkston
+Smyth
+Bane
+Daley
+Kitts
+Batterton
+Pardue
+
+CUST_LAST_NAME
+----------------------------------------
+Germonds
+Ness
+Geiss
+Ritch
+Fepoi
+Lusk
+Ling
+Gilmour
+Utterback
+Orrson
+Janney
+
+CUST_LAST_NAME
+----------------------------------------
+Haske
+Lauder
+Wensel
+Hamrick
+Woodman
+Webber
+Jacobs
+Clipp
+Luna
+Stocks
+Lassiter
+
+CUST_LAST_NAME
+----------------------------------------
+Mansfield
+Duke
+Ivey
+Lickey
+Eubank
+Ingold
+Dahl
+Pettit
+Parker
+Rodrick
+Lake
+
+CUST_LAST_NAME
+----------------------------------------
+Edmond
+Barron
+Cummins
+Valdez
+Overton
+Fairfax
+Elmore
+Odenwalld
+Park
+Haley
+Hummer
+
+CUST_LAST_NAME
+----------------------------------------
+Damato
+Naber
+Kuhler
+Hardy
+Oppy
+Petrella
+Lucca
+Manning
+Johnson
+Sandburg
+Newsome
+
+CUST_LAST_NAME
+----------------------------------------
+Paine
+Hardesty
+Barden
+Markman
+Lease
+Barajas
+Lamar
+Brown
+Tavener
+Gentile
+Chang
+
+CUST_LAST_NAME
+----------------------------------------
+Banas
+Dutton
+Vesper
+Lamay
+Berry
+Salem
+Warner
+Ireland
+Maine
+Harris
+Grey
+
+CUST_LAST_NAME
+----------------------------------------
+Lillis
+Weston
+Malloney
+Majors
+Welk
+Cole
+Taylor
+Leigh
+Wan
+Neila
+Robbins
+
+CUST_LAST_NAME
+----------------------------------------
+Zimmerman
+Kitts
+Farmer
+Lindegreen
+Cox
+Braun
+Rothman
+Cain
+Lesley
+Walker
+Banfield
+
+CUST_LAST_NAME
+----------------------------------------
+Glassman
+Jones
+Ardena
+Chinn
+Ball
+Husky
+Petrella
+Rodgers
+Lyles
+Sands
+Dunford
+
+CUST_LAST_NAME
+----------------------------------------
+Brooks
+Robbinette
+Cartwright
+Ogletree
+Oakfield
+Crisp
+Kirwin
+Roche
+Gravel
+Wiseman
+John
+
+CUST_LAST_NAME
+----------------------------------------
+Alexander
+Elliott
+Adams
+King
+Daily
+Barone
+Isaacs
+Lovett
+Lau
+Mcevoy
+Cackett
+
+154 rows selected.
+
+SQL> select * from table(dbms_xplan.display_cursor());
+
+PLAN_TABLE_OUTPUT
+--------------------------------------------------------------------------------
+SQL_ID	0rubyqjp42mdm, child number 0
+-------------------------------------
+select cust_last_name from customers where CUST_POSTAL_CODE='60332'
+
+Plan hash value: 1406422106
+
+--------------------------------------------------------------------------------
+------------------------
+
+| Id  | Operation			    | Name	       | Rows  | Bytes |
+ Cost (%CPU)| Time     |
+
+PLAN_TABLE_OUTPUT
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+------------------------
+
+|   0 | SELECT STATEMENT		    |		       |       |       |
+    79 (100)|	       |
+
+|   1 |  TABLE ACCESS BY INDEX ROWID BATCHED| CUSTOMERS        |    89 |  1246 |
+    79	 (0)| 00:00:01 |
+
+|*  2 |   INDEX RANGE SCAN		    | CUST_POSTAL_COST |    89 |       |
+
+PLAN_TABLE_OUTPUT
+--------------------------------------------------------------------------------
+     1	 (0)| 00:00:01 |
+
+--------------------------------------------------------------------------------
+------------------------
+
+
+Predicate Information (identified by operation id):
+---------------------------------------------------
+
+   2 - access("CUST_POSTAL_CODE"='60332')
+
+
+19 rows selected.
+
+SQL> 

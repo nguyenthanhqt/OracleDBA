@@ -1,0 +1,10 @@
+Cài đặt oracle 19c:
+Môi trường
+Hệ điều hành: oracle linux 7.9
+Database 19c
+
+hardware
+server: - big enliem
+solaris
+
+DSI - Database server internal

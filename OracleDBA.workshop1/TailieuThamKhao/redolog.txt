@@ -1,0 +1,116 @@
+https://dangxuanduy.com/database/thay-doi-kich-thuoc-cu%CC%89a-redo-log-trong-oracle/
+
+1. Giới thiệu
+Redo log là một thành phần rất quan trọng trong Oracle. Nó giúp Oracle database có khả năng tự phục hồi được sau những sự cố như mất điện hoặc shutdown đột ngột.
+
+Bạn có thể tham khảo bài viết sau đây để rõ hơn:
+
+Đọc thêm  Kiến trúc Process trong Oracle Database – phần 2
+Tuy nhiên, nếu bạn tạo database theo các tùy chọn mặc định, kích thước của redo log khá nhỏ (50MB).
+
+Trong hầu hết các hệ thống Production, kích thước này có thể coi là quá nhỏ, không phù hợp với các ứng dụng thực tế.
+
+Bài viết này sẽ hướng dẫn các bạn các bước để có thể thay đổi kích thước của Redo log nhé.
+
+2. Các bước tiến hành
+1. Nguyên lý
+Bạn không thể thay đổi kích thước redo log 1 cách trực tiếp. Bạn chỉ có thể thêm mới 1 redo log với kích thước mong muốn và xóa redo log cũ đi.
+
+2. Kết nối vào database bằng sqlplus
+sqlplus / as sysdba
+3. Kiểm tra kích thước của Redo log hiện tại
+select group#, bytes, status from v$log;
+Giả sử kết quả như sau:
+
+SQL> select group#, bytes, status from v$log;
+
+    GROUP#      BYTES STATUS
+---------- ---------- ----------------
+         1  52428800  CURRENT
+         2  52428800  ACTIVE
+         3  52428800  INACTIVE
+ 
+
+Câu lệnh truy vấn cho thấy: Hiện database đang có 3 redo log group, kích thước mỗi group là 52,428,800 bytes (tức là 50MB).
+
+Ngoài ra, bạn còn thấy cột status còn có 2 trạng thái là CURRENT và INACTIVE. Thực ra, redo log có các trạng thái như sau:
+
+CURRENT: Là redo log group mà tiến trình Log Writer LGWR đang ghi vào.
+ACTIVE: Là redo log group chưa được checkpoint và vẫn cần thiết khi instance recovery.
+INACTIVE: Là các redo log group đã được checkpoint và không còn cần thiết cho instance recovery.
+UNUSE: Là các redo log group chưa từng được sử dụng, thường là các redo log mới được add vào.
+ 
+
+4. Kiểm tra đường dẫn của redo log
+SQL> set lines 300
+SQL> col member for a70
+SQL> select group#, member from v$logfile;
+
+    GROUP# MEMBER
+---------- --------------------------------------------------
+         3 /u02/orcl/redo03.log
+         2 /u02/orcl/redo02.log
+         1 /u02/orcl/redo01.log
+ 
+
+5. Thêm mới các redo log group
+Bước tiếp theo bạn sẽ add các redo log group với kích thước mong muốn vào database
+
+Giả sử Redo log mới sẽ có kích thước là 200MB
+
+alter database add logfile group 4 '/u02/orcl/redo04.log' size 200M;
+alter database add logfile group 5 '/u02/orcl/redo05.log' size 200M;
+alter database add logfile group 6 '/u02/orcl/redo06.log' size 200M;
+ 
+
+Kiểm tra lại:
+
+SQL> select group#, bytes, status from v$log; 
+GROUP#     BYTES       STATUS 
+---------- ---------- ---------------- 
+1          52428800   CURRENT 
+2          52428800   ACTIVE 
+3          52428800   INACTIVE
+4          209715200  UNUSED
+5          209715200  UNUSED
+6          209715200  UNUSED
+ 
+
+Việc còn lại bây giờ là xóa các redo log cũ thôi.
+
+ 
+
+6. Xóa các Redo log cũ
+Câu lệnh để xóa như sau:
+
+alter database drop logfile group 1; 
+alter database drop logfile group 2; 
+alter database drop logfile group 3;
+Nguyên tắc bạn cần phải nhớ: Chỉ xóa được các Redo log có status là INACTIVE thôi. Nếu bạn xóa các redo log đang ở trạng thái CURRENT hoặc INACTIVE thì hệ thống sẽ báo lỗi, không cho xóa!
+
+ 
+
+alter database drop logfile group 1
+*
+ERROR at line 1:
+ORA-01623: log 1 is current log for instance orcl (thread 1) - cannot drop
+ORA-00312: online log 1 thread 1: '/u02/orcl/redo01.log'
+ 
+
+Nếu gặp lỗi trong quá trình xóa, do gặp phải redo log đang ở trạng thái ACTIVE hoặc CURRENT, bạn hãy gõ lệnh sau:
+
+alter system switch logfile;
+alter system checkpoint;
+ 
+
+Với 2 câu lệnh trên, LGWR sẽ chuyển sang ghi redo log tiếp theo và thực hiện checkpoint, như vậy các redo log cần xóa sẽ chuyển trạng thái về INACTIVE.
+
+Đọc thêm  Kiến trúc Process trong Oracle Database – phần 1
+7. Kiểm tra kết quả sau cùng:
+SQL> select group#, bytes, status from v$log;
+
+    GROUP#      BYTES STATUS
+---------- ---------- ----------------
+         4  209715200 CURRENT
+         5  209715200 UNUSED
+         6  209715200 UNUSED

@@ -1,0 +1,34 @@
+processs default=300
+set: 2 cpu 18 core =360
+x core * 10 connections
+
+connection pool
+shared server
+
+PSG
+SGA
+
+undu log
+redu log
+
+emulation mode <> Native mode
+
+check poin =200 default
+check poin cấu hinh phụ thuộc vào hệ thống
+
+select * switch log;
+
+lsnrctl status
+
+id username
+
+gán quyền vào group cho admin
+usermod -g oinstall -G dba admin
+
+tnsping hr/hr@host:1521/db 
+
+suptools
+cd /supotools
+cd oratop -r -f -i 10 / as sysdba
+
+alter pluggable database all open

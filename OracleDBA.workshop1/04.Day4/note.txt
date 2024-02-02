@@ -1,0 +1,22 @@
+1. direct path read 0-56
+set autotrace on; 
+
+2. share serrver
+show parameter share
+
+alter system set max_share_server=10 scope = both;
+alter system set shared_server=3 scope=both;
+show parameter dispatcher
+alter system set dispatchers='(PROTOCOL=TCP)(SERVICE=orclcdbXDB, orcl_share)(DISPATCHERS=3)'
+
+/
+0-13 share shared_server
+13-40
+Lap di chuyen data base
+
+chieu
+Tạo plugable 0-47
+clone plugeable; 1h20
+
+
+Aplycation pdb \

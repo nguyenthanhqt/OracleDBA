@@ -1,0 +1,20 @@
+link tài liệu setup:
+https://drive.google.com/drive/folders/1HPtzZGk1pMisQ1JxWANtPWIzJsXOaVJu?usp=sharing
+
+
+Kiển tra thông tin hệ thống 
+ls /etc/*loc*
+cat /etc/oraInst.loc  ; 
+
+cat /etc/
+
+ps -ef | grep orcl kiểm tra databse có chạy không
+ps -ef | grep lsnr ; kiểm tra listenner có chạy không
+which oraenv
+
+
+
+select * from v$datafile
+desc v$log
+select gropup#, blocksize, byte/1024/1024 MB from v$log;
+show parameter processs

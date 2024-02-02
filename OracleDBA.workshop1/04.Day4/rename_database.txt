@@ -1,0 +1,59 @@
+-- Xem thu muc chua pdbseed
+SQL> select name from v$datafile;
+
+NAME
+--------------------------------------------------------------------------------
+/u01/app/oracle/oradata/ORCLCDB/system01.dbf
+/u01/app/oracle/oradata/ORCLCDB/sysaux01.dbf
+/u01/app/oracle/oradata/ORCLCDB/undotbs01.dbf
+/u01/app/oracle/oradata/ORCLCDB/pdbseed/system01.dbf
+--Tao thu muc chua pdb salespdb
+host mkdir -p /u01/app/oracle/oradata/ORCLCDB/salespdb
+-- Tao pdb
+CREATE PLUGGABLE DATABASE salespdb
+  ADMIN USER salesadm IDENTIFIED BY oracle
+  ROLES = (dba)
+  DEFAULT TABLESPACE sales
+    DATAFILE '/disk1/oracle/dbs/salespdb/sales01.dbf' SIZE 250M AUTOEXTEND ON
+  FILE_NAME_CONVERT = ('/u01/app/oracle/oradata/ORCLCDB/pdbseed/',
+                       '/u01/app/oracle/oradata/ORCLCDB/salespdb/')
+ ;
+-- Open
+alter pluggable database salespdb open;
+-- Rename
+SQL> alter pluggable database salespdb close immediate;
+
+Pluggable database altered.
+
+SQL> alter pluggable database salespdb open restricted;
+
+Pluggable database altered.
+-- Ket noi vao PDB
+sqlplus sys/oracle@localhost:1521/salespdb as sysdba
+alter pluggable database salespdb rename global_name to sales;
+-- Kiem tra
+sqlplus / as sysdba
+SQL> show pdbs
+
+    CON_ID CON_NAME			  OPEN MODE  RESTRICTED
+---------- ------------------------------ ---------- ----------
+	 2 PDB$SEED			  READ ONLY  NO
+	 3 ORCL 			  READ WRITE NO
+	 4 SALES			  READ WRITE YES
+SQL> alter pluggable database sales close immediate;
+
+Pluggable database altered.
+
+SQL> alter pluggable database sales open;
+
+Pluggable database altered.
+
+SQL> show pdbs
+
+    CON_ID CON_NAME			  OPEN MODE  RESTRICTED
+---------- ------------------------------ ---------- ----------
+	 2 PDB$SEED			  READ ONLY  NO
+	 3 ORCL 			  READ WRITE NO
+	 4 SALES			  READ WRITE NO
+SQL> 
+

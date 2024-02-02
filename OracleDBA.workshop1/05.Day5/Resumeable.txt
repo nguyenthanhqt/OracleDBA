@@ -1,0 +1,47 @@
+create user abc identified by abc;
+grant connect to abc;
+alter user abc quota 1M on users;
+SQL> grant create table to abc;
+
+Grant succeeded.
+
+SQL> grant RESUMABLE to abc;
+-- conn abc/abc
+
+create table test (col_1 number(10),col_2 date);
+
+Table created.
+
+-- Tao script loop.sql  co noi dung nhu sau
+
+declare
+x number;
+begin
+x:= 0;
+for i in 1 .. 500000
+loop
+insert into test
+values
+(x,sysdate);
+x := x+1;
+commit;
+end loop;
+end;
+/
+-- conn / as sysdba
+CREATE OR REPLACE TRIGGER TEST_RESUMABLE
+AFTER SUSPEND ON DATABASE
+BEGIN
+DBMS_RESUMABLE.SET_TIMEOUT(3600);
+END;
+/
+
+-- Test
+sqlplus abc/abc
+alter session enable resumable;
+@loop.sql
+-- Trong mot session khac
+sqlplus / as sysdba
+column SQL_TEXT format A30
+select error_msg,SQL_TEXT from dba_resumable;
+alter user abc quota 200M on users;

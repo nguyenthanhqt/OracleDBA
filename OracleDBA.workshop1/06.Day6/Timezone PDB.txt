@@ -1,0 +1,42 @@
+[oracle@orainsite32 ~]$ sqlplus / as sysdba
+
+SQL*Plus: Release 19.0.0.0.0 - Production on Wed Jul 5 13:30:00 2023
+Version 19.12.0.0.0
+
+Copyright (c) 1982, 2021, Oracle.  All rights reserved.
+
+
+Connected to:
+Oracle Database 19c Enterprise Edition Release 19.0.0.0.0 - Production
+Version 19.12.0.0.0
+
+SQL> select dbms_scheduler.stime from dual;
+
+STIME
+---------------------------------------------------------------------------
+05-JUL-23 01.30.03.619769000 PM ASIA/HO_CHI_MINH
+
+SQL> show pdbs
+
+    CON_ID CON_NAME			  OPEN MODE  RESTRICTED
+---------- ------------------------------ ---------- ----------
+	 2 PDB$SEED			  READ ONLY  NO
+	 3 PDBDBINSITE			  READ WRITE NO
+SQL> alter session set container=PDBDBINSITE;
+
+Session altered.
+
+SQL> select dbms_scheduler.stime from dual;
+
+STIME
+---------------------------------------------------------------------------
+04-JUL-23 11.30.42.434861000 PM PST8PDT
+--
+exec dbms_scheduler.set_scheduler_attribute('default_timezone', 'ASIA/HO_CHI_MINH');
+--
+SQL> select dbms_scheduler.stime from dual;
+
+STIME
+---------------------------------------------------------------------------
+05-JUL-23 01.36.28.828813000 PM ASIA/HO_CHI_MINH
+

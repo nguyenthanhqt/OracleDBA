@@ -1,0 +1,176 @@
+[oracle@server demo]$ sqlplus hr/hr
+
+SQL*Plus: Release 11.2.0.1.0 Production on Tue May 21 14:28:18 2013
+
+Copyright (c) 1982, 2009, Oracle.  All rights reserved.
+
+
+Connected to:
+Oracle Database 11g Enterprise Edition Release 11.2.0.1.0 - 64bit Production
+With the Partitioning, Automatic Storage Management, OLAP, Data Mining
+and Real Application Testing options
+
+SQL> CREATE TABLE HR.BIG_ROWS (
+id number NOT NULL,
+field1 char(2000) DEFAULT 'A' NOT NULL,
+field2 char(2000),
+field3 char(2000),
+field4 char(1000),
+constraint PK_BIG_ROWS primary key (ID))
+TABLESPACE USERS PCTFREE 10;  2    3    4    5    6    7    8
+
+Table created.
+
+SQL> INSERT INTO HR.BIG_ROWS (id)
+select rownum from all_objects where rownum < 101;  2
+
+100 rows created.
+
+SQL> ANALYZE TABLE HR.BIG_ROWS COMPUTE STATISTICS;
+
+Table analyzed.
+
+SQL>  SELECT CHAIN_CNT FROM ALL_TABLES
+WHERE OWNER = 'HR' and TABLE_NAME ='BIG_ROWS';  2
+
+ CHAIN_CNT
+----------
+         0
+SQL> UPDATE HR.BIG_ROWS SET field2 = 'B',
+field3 = 'C', field4 = 'D'
+WHERE MOD(id, 2) = 1;  2    3
+
+50 rows updated.
+
+SQL> ANALYZE TABLE HR.BIG_ROWS COMPUTE STATISTICS;
+
+Table analyzed.
+
+SQL> SELECT CHAIN_CNT FROM ALL_TABLES
+WHERE OWNER = 'HR' AND TABLE_NAME = 'BIG_ROWS';  2
+
+ CHAIN_CNT
+----------
+        50
+-- Cach 1
+SQL> create table HR.CHAINED_ROWS (
+owner_name varchar2(30),
+table_name varchar2(30),
+cluster_name varchar2(30),
+partition_name varchar2(30),
+subpartition_name varchar2(30),
+head_rowid rowid,
+analyze_timestamp date
+);  2    3    4    5    6    7    8    9
+
+Table created.
+
+SQL> ANALYZE TABLE HR.BIG_ROWS LIST CHAINED ROWS
+INTO HR.CHAINED_ROWS;  2
+
+Table analyzed.
+
+SQL> SELECT COUNT(*) FROM HR.CHAINED_ROWS;
+
+  COUNT(*)
+----------
+        50
+
+
+--
+SQL> CREATE table TEMP_BIG_ROWS as select * FROM HR.BIG_ROWS WHERE 1=0;
+
+Table created.
+
+--
+SQL> INSERT INTO TEMP_BIG_ROWS
+SELECT B.* FROM HR.BIG_ROWS B, HR.CHAINED_ROWS T
+WHERE T.OWNER_NAME = 'HR' AND T.TABLE_NAME = 'BIG_ROWS'
+AND T.HEAD_ROWID = B.ROWID;  2    3    4
+
+50 rows created.
+--
+SQL> DELETE FROM HR.BIG_ROWS B WHERE EXISTS (
+SELECT T.ROWID FROM HR.CHAINED_ROWS T
+WHERE T.OWNER_NAME = 'HR' AND T.TABLE_NAME = 'BIG_ROWS'
+AND T.HEAD_ROWID = B.ROWID);  2    3    4
+
+50 rows deleted.
+--
+SQL> INSERT INTO HR.BIG_ROWS SELECT * FROM HR.TEMP_BIG_ROWS;
+
+50 rows created.
+--
+SQL> ANALYZE TABLE HR.BIG_ROWS COMPUTE STATISTICS;
+
+Table analyzed.
+
+SQL> SELECT CHAIN_CNT FROM ALL_TABLES WHERE OWNER = 'HR'
+AND TABLE_NAME = 'BIG_ROWS';
+  2
+ CHAIN_CNT
+----------
+         0
+
+SQL>
+-- cleanup
+DROP TABLE HR.TEMP_BIG_ROWS;
+DROP TABLE HR.CHAINED_ROWS;
+DROP TABLE HR.BIG_ROWS;
+-- cach 2 Online redefinition
+-- Tao interim
+CREATE TABLE HR.BIG_ROWS_INT (
+id number NOT NULL,
+field1 char(2000) DEFAULT 'A' NOT NULL,
+field2 char(2000),
+field3 char(2000),
+field4 char(1000),
+constraint PK_BIG_ROWS_INT primary key (ID))
+TABLESPACE USERS PCTFREE 10;
+-- conn system
+-- Step 2 check interim can redefinition
+begin
+dbms_redefinition.can_redef_table (uname => 'HR', tname=>'BIG_ROWS',
+options_flag=>dbms_redefinition.cons_use_rowid);
+end;
+/
+-- Step 3 (So anh huong he thong, khong parallel)
+ALTER SESSION FORCE PARALLEL DML PARALLEL 2;
+ALTER SESSION FORCE PARALLEL QUERY PARALLEL 2;
+-- Step 4 start redifination
+begin
+dbms_redefinition.start_redef_table (uname => 'HR',
+orig_table=>'BIG_ROWS',
+int_table=>'BIG_ROWS_INT',
+options_flag=>dbms_redefinition.cons_use_rowid);
+end;
+/
+-- sync
+begin
+dbms_redefinition.SYNC_INTERIM_TABLE (uname => 'HR',
+orig_table=>'BIG_ROWS',
+int_table=>'BIG_ROWS_INT');
+end;
+/
+
+--Step 5 finish
+begin
+dbms_redefinition.finish_redef_table (uname => 'HR',
+orig_table=>'BIG_ROWS',
+int_table=>'BIG_ROWS_INT');
+end;
+/
+-- 5.1
+-- Drop table interim
+drop table HR.BIG_ROWS_INT;
+-- Kiem tra lai
+SQL> ANALYZE TABLE HR.BIG_ROWS COMPUTE STATISTICS;
+
+Table analyzed.
+
+SQL> SELECT CHAIN_CNT FROM ALL_TABLES WHERE OWNER = 'HR'
+AND TABLE_NAME = 'BIG_ROWS';
+  2
+ CHAIN_CNT
+----------
+         0

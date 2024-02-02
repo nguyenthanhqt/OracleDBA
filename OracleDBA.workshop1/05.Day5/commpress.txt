@@ -1,0 +1,64 @@
+SET SERVEROUTPUT ON
+DECLARE
+  l_blkcnt_cmp    PLS_INTEGER;
+  l_blkcnt_uncmp  PLS_INTEGER;
+  l_row_cmp       PLS_INTEGER;
+  l_row_uncmp     PLS_INTEGER;
+  l_cmp_ratio     NUMBER;
+  l_comptype_str  VARCHAR2(32767);
+BEGIN
+  DBMS_COMPRESSION.get_compression_ratio (
+    scratchtbsname  => 'USERS',
+    ownname         => 'SH',
+    objname         => 'CUSTOMERS',
+    subobjname      => NULL,
+    comptype        => DBMS_COMPRESSION.comp_advanced,
+    blkcnt_cmp      => l_blkcnt_cmp,
+    blkcnt_uncmp    => l_blkcnt_uncmp,
+    row_cmp         => l_row_cmp,
+    row_uncmp       => l_row_uncmp,
+    cmp_ratio       => l_cmp_ratio,
+    comptype_str    => l_comptype_str,
+    subset_numrows  => DBMS_COMPRESSION.comp_ratio_allrows,
+    objtype         => DBMS_COMPRESSION.objtype_table
+  );
+
+  DBMS_OUTPUT.put_line('Number of blocks used (compressed)       : ' ||  l_blkcnt_cmp);
+  DBMS_OUTPUT.put_line('Number of blocks used (uncompressed)     : ' ||  l_blkcnt_uncmp);
+  DBMS_OUTPUT.put_line('Number of rows in a block (compressed)   : ' ||  l_row_cmp);
+  DBMS_OUTPUT.put_line('Number of rows in a block (uncompressed) : ' ||  l_row_uncmp);
+  DBMS_OUTPUT.put_line('Compression ratio                        : ' ||  l_cmp_ratio);
+  DBMS_OUTPUT.put_line('Compression type                         : ' ||  l_comptype_str);
+END;
+/
+
+Number of blocks used (compressed)       : 761
+Number of blocks used (uncompressed)     : 1507
+Number of rows in a block (compressed)   : 72
+Number of rows in a block (uncompressed) : 36
+Compression ratio                        : 1.9
+Compression type                         : "Compress Advanced"
+
+PL/SQL procedure successfully completed.
+--
+alter table sh.customers move compress for all operations;
+--
+SELECT rowid,
+       CASE DBMS_COMPRESSION.get_compression_type ('SH', 'CUSTOMERS', rowid)
+         WHEN 1  THEN 'COMP_NOCOMPRESS'
+         WHEN 2  THEN 'COMP_FOR_QUERY_HIGH'
+         WHEN 4  THEN 'COMP_FOR_QUERY_LOW'
+         WHEN 8  THEN 'COMP_FOR_ARCHIVE_HIGH'
+         WHEN 16 THEN 'COMP_FOR_ARCHIVE_LOW'
+         WHEN 32 THEN 'COMP_BLOCK'
+       END AS compression_type
+FROM   sh.customers
+WHERE  rownum <= 5;
+
+ROWID              COMPRESSION_TYPE
+------------------ ---------------------
+AAAdEpAAKAAAKHDAAA COMP_FOR_QUERY_HIGH
+AAAdEpAAKAAAKHDAAB COMP_FOR_QUERY_HIGH
+AAAdEpAAKAAAKHDAAC COMP_FOR_QUERY_HIGH
+AAAdEpAAKAAAKHDAAD COMP_FOR_QUERY_HIGH
+AAAdEpAAKAAAKHDAAE COMP_FOR_QUERY_HIGH

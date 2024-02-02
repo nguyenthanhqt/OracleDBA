@@ -1,0 +1,99 @@
+[oracle@node01 ~]$ sqlplus system/oracle@localhost:1721/orcl
+--
+! mkdir -p /home/oracle/ext
+CREATE DIRECTORY EXT_DIR AS '/home/oracle/ext';
+grant read,write on directory EXT_DIR to hr;
+-- Unloading
+conn hr/hr@localhost:1721/orcl
+SQL> create table ext_emp
+      organization external(
+              type oracle_datapump
+             default directory EXT_DIR
+             location ('ext_emp.dmp')
+      )
+   as
+      select * from employees where department_id= 20;
+
+Table created.
+SQL> ! mv /home/oracle/ext/ext_emp.dmp /home/oracle/ext/ext_emp_20.dmp
+
+SQL> drop table ext_emp;
+
+Table dropped.
+
+SQL> create table ext_emp
+      organization external(
+              type oracle_datapump
+             default directory EXT_DIR
+             location ('ext_emp.dmp')
+      )
+   as
+      select * from employees where department_id= 30;
+
+Table created.
+
+SQL> ! mv /home/oracle/ext/ext_emp.dmp /home/oracle/ext/ext_emp_30.dmp;
+
+-- Loading
+SQL> drop table dp_emp;
+create table dp_emp(
+        EMPLOYEE_ID        NUMBER(6),
+    FIRST_NAME VARCHAR2(20),
+       LAST_NAME VARCHAR2(25),
+        EMAIL              VARCHAR2(25),
+        PHONE_NUMBER       VARCHAR2(20),
+    HIRE_DATE DATE,
+        JOB_ID             VARCHAR2(10),
+       SALARY             NUMBER(8,2),
+       COMMISSION_PCT     NUMBER(2,2),
+    MANAGER_ID NUMBER(6),
+       DEPARTMENT_ID      NUMBER(4)
+      )
+      organization external
+      (
+          type oracle_datapump
+          default directory EXT_DIR
+          location ('ext_emp_20.dmp','ext_emp_30.dmp')
+       ) ;
+--
+SQL> select last_name,department_id from dp_emp;
+
+LAST_NAME                 DEPARTMENT_ID
+------------------------- -------------
+Hartstein                            20
+Fay                                  20
+Raphaely                             30
+
+
+-- SQL loader
+cd ext
+vi demo.dat
+7369,SMITH,CLERK,20
+7499,ALLEN,SALESMAN,30
+7521,WARD,SALESMAN,30
+7566,JONES,MANAGER,20
+7654,MARTIN,SALESMAN,30
+ vi demo2.dat
+1111,MORGAN,DIRECTOR,10
+2222,HARDIE,MANAGER,30
+3333,HAVEMEYER,VP MKTG,10
+4444,LOFSTROM,MANAGER,10
+5555,ALLEN,SECURITY,30
+--
+
+CREATE TABLE ext_tab (
+empno CHAR(4),
+ename CHAR(20),
+job CHAR(20),
+deptno CHAR(2))
+ORGANIZATION EXTERNAL
+(TYPE oracle_loader
+DEFAULT DIRECTORY EXT_DIR
+ACCESS PARAMETERS
+(FIELDS TERMINATED BY ','
+MISSING FIELD VALUES ARE NULL
+(empno, ename, job, deptno))
+LOCATION ('demo.dat','demo2.dat'))
+PARALLEL
+REJECT LIMIT 0;
+--

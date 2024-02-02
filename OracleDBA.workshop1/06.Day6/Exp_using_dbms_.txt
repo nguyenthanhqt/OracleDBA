@@ -1,0 +1,55 @@
+B1: sqlplus sys/oracle@localhost:1521/orcl as sysdba
+SQL> create directory tmp_dir as '/tmp';
+
+Directory created.
+B2:
+CREATE OR REPLACE procedure SYSTEM.exp_hr
+as
+  v_prefix varchar2(10):=to_char(sysdate,'dd_mm_yyyy');
+  l_dp_handle       number;
+begin
+  -- Open a schema export job.
+  l_dp_handle := dbms_datapump.open(
+    operation   => 'EXPORT',
+    job_mode    => 'SCHEMA',
+    remote_link => NULL,
+    job_name    => 'HR_EXPORT'||v_prefix,
+    version     => 'LATEST');
+
+ 	
+  dbms_datapump.set_parameter(
+    handle => l_dp_handle, 
+    name => 'COMPRESSION', 
+    value => 'ALL');
+
+  -- Specify the dump file name and directory object name.
+  dbms_datapump.add_file(
+    handle    => l_dp_handle,
+    filename  => 'HR_EXPORT'||v_prefix||'.dmp',
+    directory => 'TMP_DIR');
+
+  -- Specify the log file name and directory object name.
+  dbms_datapump.add_file(
+    handle    => l_dp_handle,
+    filename  => 'HR_EXPORT'||v_prefix||'.log',
+    directory => 'TMP_DIR',
+    filetype  => DBMS_DATAPUMP.KU$_FILE_TYPE_LOG_FILE);
+
+  -- Specify the schema to be exported.
+  dbms_datapump.metadata_filter(
+    handle => l_dp_handle,
+    name   => 'SCHEMA_EXPR',
+    value  => '= ''HR''');
+  dbms_datapump.start_job(l_dp_handle);
+  dbms_datapump.detach(l_dp_handle);
+end;
+/
+B3: Thuc thi
+SQL> exec SYSTEM.exp_hr;
+
+PL/SQL procedure successfully completed.
+
+SQL> ! ls /tmp
+. . .
+HR_EXPORT13_08_2021.dmp
+HR_EXPORT13_08_2021.log

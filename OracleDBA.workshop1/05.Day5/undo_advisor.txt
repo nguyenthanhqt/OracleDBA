@@ -1,0 +1,126 @@
+-- Muon giu lai thong tin undo 900s
+select
+  sum(bytes)/1024/1024                  cur_mb_size
+ ,dbms_undo_adv.required_undo_size(900) req_mb_size
+from dba_data_files
+where tablespace_name =
+  (select
+    value
+   from v$parameter
+   where name = 'undo_tablespace');
+--
+SET SERVEROUT ON SIZE 1000000
+DECLARE
+ pro    VARCHAR2(200);
+ rec    VARCHAR2(200);
+ rtn    VARCHAR2(200);
+ ret    NUMBER;
+ utb    NUMBER;
+ retval NUMBER;
+BEGIN
+  DBMS_OUTPUT.PUT_LINE(DBMS_UNDO_ADV.UNDO_ADVISOR(1));
+  DBMS_OUTPUT.PUT_LINE('Required Undo Size (megabytes): ' || DBMS_UNDO_ADV.REQUIRED_UNDO_SIZE 
+(900));
+  retval := DBMS_UNDO_ADV.UNDO_HEALTH(pro, rec, rtn, ret, utb);
+  DBMS_OUTPUT.PUT_LINE('Problem:   ' || pro);
+  DBMS_OUTPUT.PUT_LINE('Advice:    ' || rec);
+  DBMS_OUTPUT.PUT_LINE('Rational:  ' || rtn);
+  DBMS_OUTPUT.PUT_LINE('Retention: ' || TO_CHAR(ret));
+  DBMS_OUTPUT.PUT_LINE('UTBSize:   ' || TO_CHAR(utb));
+END;
+/
+--
+set serveroutput on
+DECLARE
+v_table_space_name      VARCHAR2(30);
+v_table_space_size_in_MB        NUMBER(9);
+v_auto_extend      BOOLEAN;
+v_undo_retention      NUMBER(9);
+v_retention_guarantee    BOOLEAN;
+v_undo_info_return    BOOLEAN;
+BEGIN
+v_undo_info_return := dbms_undo_adv.undo_info(v_table_space_name, v_table_space_size_in_MB, v_auto_extend, v_undo_retention, v_retention_guarantee);
+dbms_output.put_line('UNDO Tablespace Name: ' || v_table_space_name);
+dbms_output.put_line('UNDO Tablespace size (MB) : ' || TO_CHAR(v_table_space_size_in_MB));
+dbms_output.put_line('If UNDO tablespace is auto extensible above size indicates max possible size of the undo tablespace');
+dbms_output.put_line('UNDO tablespace auto extensiable is : '|| CASE WHEN v_auto_extend THEN  'ON' ELSE 'OFF' END);
+dbms_output.put_line('Undo Retention (Sec): ' || v_undo_retention);
+dbms_output.put_line('Retention : '||CASE WHEN v_retention_guarantee THEN 'Guaranteed ' ELSE 'NOT Guaranteed' END);
+END;
+/
+--
+DECLARE
+v_undo_advisor_return VARCHAR2(100);
+BEGIN
+v_undo_advisor_return := dbms_undo_adv.undo_advisor(instance => 1);
+dbms_output.put_line(v_undo_advisor_return);
+END;
+/
+-- Test
+SQL> create undo tablespace undotbs2 datafile '/u01/app/oracle/oradata/orcl/undotbs02.dbf' size 5m;
+
+Tablespace created.
+
+SQL> alter system set undo_tablespace='UNDOTBS2' scope=spfile;
+
+System altered.
+
+SQL> startup force;
+ORACLE instance started.
+
+Total System Global Area 1068937216 bytes
+Fixed Size                  2220200 bytes
+Variable Size             729812824 bytes
+Database Buffers          331350016 bytes
+Redo Buffers                5554176 bytes
+Database mounted.
+Database opened.
+SQL> set serveroutput on
+DECLARE
+v_undo_health_return number;
+v_retention number;
+v_utbsize number;
+v_problem VARCHAR2(1024);
+v_recommendation VARCHAR2(1024);
+v_rationale VARCHAR2(1024);
+BEGIN
+v_undo_health_return :=  dbms_undo_adv.undo_health(problem => v_problem,
+recommendation => v_recommendation,
+rationale => v_rationale,
+retention => v_retention,
+utbsize => v_utbsize);
+dbms_output.put_line('Problem : '||v_problem);
+dbms_output.put_line('Recommendation= : '||v_recommendation);
+dbms_output.put_line('Rationale : '||v_retention);
+dbms_output.put_line('Retention : '||v_retention);
+dbms_output.put_line('UNDO tablespace size : '||v_utbsize);
+END;
+/SQL>   2    3    4    5    6    7    8    9   10   11   12   13   14   15   16   17   18   19   20
+Problem : Undo tablespace cannot support required undo retention
+Recommendation= : Size undo tablespace to 10 MB
+Rationale : 0
+Retention : 0
+UNDO tablespace size : 10
+
+PL/SQL procedure successfully completed.
+
+SQL>
+---
+SQL> alter database datafile '/u01/app/oracle/oradata/orcl/undotbs02.dbf' resize 10m;
+
+Database altered.
+--
+Set serverout on
+declare
+v_autotune_return Boolean := null;
+v_autotune_enabled boolean := null;
+begin
+v_autotune_return:= dbms_undo_adv.undo_autotune(v_autotune_enabled);
+dbms_output.put_line(CASE WHEN v_autotune_return THEN 'Information is available :' ELSE 'Information is NOT available :' END||
+CASE WHEN v_autotune_enabled THEN 'Auto tuning of undo retention is ENABLED' ELSE 'Auto tuning of undo retention is NOT enabled' END);
+end;
+/
+--
+select dbms_undo_adv.longest_query from dual;
+--
+select dbms_undo_adv.required_retention from dual;

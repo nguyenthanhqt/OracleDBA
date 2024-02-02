@@ -1,0 +1,237 @@
+-- Trong session 1 voi user hr
+CREATE OR REPLACE PROCEDURE dept_query (
+    p_deptno        employees.department_id%TYPE,
+    p_sal           employees.salary%TYPE
+)
+IS
+    emp_refcur      SYS_REFCURSOR;
+    v_empno         employees.employee_id%TYPE;
+    v_ename         employees.last_name%TYPE;
+BEGIN
+    OPEN emp_refcur FOR 'SELECT employee_id, last_name FROM employees WHERE department_id = :dept'
+        || ' AND salary >= :sal' USING p_deptno, p_sal;
+    DBMS_OUTPUT.PUT_LINE('EMPNO    ENAME');
+    DBMS_OUTPUT.PUT_LINE('-----    -------');
+    LOOP
+        FETCH emp_refcur INTO v_empno, v_ename;
+        EXIT WHEN emp_refcur%NOTFOUND;
+        DBMS_OUTPUT.PUT_LINE(v_empno || '     ' || v_ename);
+        dbms_lock.sleep(30);
+    END LOOP;
+    CLOSE emp_refcur;
+END;
+/
+-- Thuc thi
+SQL> exec dept_query(50,2000);
+-- Trong session HR thu 2
+SQL> desc employees
+ Name                                      Null?    Type
+ ----------------------------------------- -------- ----------------------------
+ EMPLOYEE_ID                               NOT NULL NUMBER(6)
+ FIRST_NAME                                         VARCHAR2(20)
+ LAST_NAME                                 NOT NULL VARCHAR2(25)
+ EMAIL                                     NOT NULL VARCHAR2(25)
+ PHONE_NUMBER                                       VARCHAR2(20)
+ HIRE_DATE                                 NOT NULL DATE
+ JOB_ID                                    NOT NULL VARCHAR2(10)
+ SALARY                                             NUMBER(8,2)
+ COMMISSION_PCT                                     NUMBER(2,2)
+ MANAGER_ID                                         NUMBER(6)
+ DEPARTMENT_ID                                      NUMBER(4)
+
+SQL> alter table employees modify (salary  NUMBER(10,2) default 0);
+SQL> select to_char(LAST_DDL_TIME,'dd-mm-yyyy:hh24.mi.ss') from user_objects where object_name='EMPLOYEES';
+SQL> exec dept_query(50,2000);
+-- Trong session HR thu 3
+SQL> exec dept_query(10,3000);
+-- Quan sat tren oratop
+EVENT (RT)                                                        TOTAL WAITS  S
+library cache pin                                                          61
+library cache lock                                                         14
+-- Trong sys xac dinh session dang giu lock va kill
+SELECT decode( a.blocker_sid||','||a.SESS_SERIAL# , NULL , '<chain id#' ||a.chain_id||'>' ) chain_id,
+       RPAD( '+' , LEVEL , '-' ) ||a.sid||','||a.SESS_SERIAL# sid,
+       RPAD( ' ' , LEVEL , ' ' ) ||a.wait_event_text wait_event
+FROM   V$WAIT_CHAINS  a
+CONNECT BY PRIOR a.sid=a.blocker_sid
+AND    PRIOR a.sess_serial#=a.blocker_sess_serial#
+AND    PRIOR a.instance = a.blocker_instance START WITH a.blocker_is_valid='FALSE'
+ORDER  BY a.chain_id ,
+       LEVEL
+/
+--
+alter system kill session  '&sid_serial'  immediate;
+--
+set pages 1000
+set lines 120
+set heading off
+column w_proc format a50 tru
+column instance format a20 tru
+column inst format a28 tru
+column wait_event format a50 tru
+column p1 format a16 tru
+column p2 format a16 tru
+column p3 format a15 tru
+column Seconds format a50 tru
+column sincelw format a50 tru
+column blocker_proc format a50 tru
+column fblocker_proc format a50 tru
+column waiters format a50 tru
+column chain_signature format a100 wra
+column blocker_chain format a100 wra
+
+SELECT *
+FROM (SELECT 'Current Process: '||osid W_PROC, 'SID '||i.instance_name INSTANCE,
+ 'INST #: '||instance INST,'Blocking Process: '||decode(blocker_osid,null,'<none>',blocker_osid)||
+ ' from Instance '||blocker_instance BLOCKER_PROC,
+ 'Number of waiters: '||num_waiters waiters,
+ 'Final Blocking Process: '||decode(p.spid,null,'<none>',
+ p.spid)||' from Instance '||s.final_blocking_instance FBLOCKER_PROC,
+ 'Program: '||p.program image,
+ 'Wait Event: ' ||wait_event_text wait_event, 'P1: '||wc.p1 p1, 'P2: '||wc.p2 p2, 'P3: '||wc.p3 p3,
+ 'Seconds in Wait: '||in_wait_secs Seconds, 'Seconds Since Last Wait: '||time_since_last_wait_secs sincelw,
+ 'Wait Chain: '||chain_id ||': '||chain_signature chain_signature,'Blocking Wait Chain: '||decode(blocker_chain_id,null,
+ '<none>',blocker_chain_id) blocker_chain
+FROM v$wait_chains wc,
+ gv$session s,
+ gv$session bs,
+ gv$instance i,
+ gv$process p
+WHERE wc.instance = i.instance_number (+)
+ AND (wc.instance = s.inst_id (+) and wc.sid = s.sid (+)
+ and wc.sess_serial# = s.serial# (+))
+ AND (s.final_blocking_instance = bs.inst_id (+) and s.final_blocking_session = bs.sid (+))
+ AND (bs.inst_id = p.inst_id (+) and bs.paddr = p.addr (+))
+ AND ( num_waiters > 0
+ OR ( blocker_osid IS NOT NULL
+ AND in_wait_secs > 10 ) )
+ORDER BY chain_id,
+ num_waiters DESC)
+WHERE ROWNUM < 101;
+--> Tìm Final Blocking Process
+kill -9 2309
+---
+column session_detail format a15 heading "Sid and module"
+column blocker_sid format 9999 heading "Blkd|by"
+column wait_event_text format a29 heading "Wait event" 
+column object_name format a20 heading "Object"
+column sql_text format a70 heading "current sql"
+set pages 1000
+set lines 75
+set echo on 
+
+SELECT RPAD('+', LEVEL ,'-') || sid||','||c.SESS_SERIAL#||' '||sess.module session_detail,
+       blocker_sid,  wait_event_text,
+       object_name,RPAD(' ', LEVEL )||sql_text sql_text
+FROM          v$wait_chains c
+           LEFT OUTER JOIN
+              dba_objects o
+           ON (row_wait_obj# = object_id)
+        JOIN
+           v$session sess
+        USING (sid)
+     LEFT OUTER JOIN
+        v$sql sql
+     ON (sql.sql_id = sess.sql_id 
+         AND sql.child_number = sess.sql_child_number)
+CONNECT BY     PRIOR sid = blocker_sid
+           AND PRIOR sess_serial# = blocker_sess_serial#
+           AND PRIOR INSTANCE = blocker_instance
+START WITH blocker_is_valid = 'FALSE'; 
+--
+alter system kill session  '&sid_serial'  immediate;
+############################################
+set linesize 180
+set pages 100
+ 
+col inst_id  for  999
+col sid      for  a8
+col serial#  for  999999
+col wait_secs  heading 'WAIT|_SECS' for 999999
+col object_id  heading 'OBJECT|_ID' for 999999
+col spid     for a7
+col sql_text for a21
+col event    for a30
+col prog_mod for a10
+col p1       for a28
+ 
+WITH v_wait_chains AS (
+                      SELECT
+                             instance ,
+                             LPAD( ' ' , 2*( lv-1 ) ) ||sid sid,
+                             sess_serial# ,
+                             osid spid,
+                             wait_event_text event,
+                             p1_text,
+                             p1,
+                             p2_text,
+                             p2,
+                             p3_text,
+                             p3,
+                             in_wait_secs ,
+                             row_wait_obj#
+                      FROM   (
+                              SELECT a.* ,
+                                     LEVEL lv
+                              FROM   v$wait_chains a
+                              START WITH blocker_is_valid = 'FALSE'
+                              CONNECT BY PRIOR sid          = blocker_sid
+                              AND        PRIOR sess_serial# = blocker_sess_serial#
+                              AND        PRIOR instance     = blocker_instance
+                               )
+                      WHERE  num_waiters > 0
+                      OR     blocker_sid IS NOT NULL
+     )
+SELECT /*+ leading(a b c) use_nl(b c) */
+     a.instance inst_id ,
+     a.sid ,
+     a.sess_serial# serial# ,
+     a.in_wait_secs wait_secs ,
+     nvl(b.module, b.program) prog_mod,
+     a.spid ,
+     SUBSTR( c.sql_text , 1 , 20 ) sql_text ,
+     a.row_wait_obj# object_id,
+     a.event ,
+     a.p1_text||'=>'||a.p1 p1
+FROM v_wait_chains a ,
+     gv$session    b ,
+     gv$sql        c
+WHERE a.instance    = b.inst_id
+AND  a.sid          = b.sid
+AND  a.sess_serial# = b.serial#
+AND  b.inst_id      = c.inst_id
+AND  nvl(b.sql_id, b.prev_sql_id) = c.sql_id;
+-- Tim session dang giu lock
+select o.owner, o.object, s.username, b.sid, b.serial#, b.mode_held, b.request
+from (
+	SELECT kglnaown AS owner, kglnaobj as Object
+	FROM sys.x$kglob
+	WHERE kglhdadr in (
+		select e.p1raw
+		from v$session s, v$session_wait e
+		where s.sid = e.sid
+		and e.event like 'library cache pin'
+	)
+) o,
+(
+	SELECT 
+		s.sid
+		, s.serial#
+		, kglpnmod mode_held
+		, kglpnreq request
+	FROM sys.x$kglpn p, sys.v_$session s
+	WHERE p.kglpnuse = s.saddr
+	AND kglpnhdl in (
+		select e.p1raw
+		from v$session s, v$session_wait e
+		where s.sid = e.sid
+		and e.event like '%library cache%'
+		and kglpnmod != 0 -- mode held - 0 indicates possible blocker
+	)
+) b,
+v$session s
+where b.serial# = s.serial#
+and b.sid = s.sid
+/
+--
+ 

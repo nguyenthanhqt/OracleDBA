@@ -1,0 +1,28 @@
+SQL> update departments set department_name='ABC' where department_id=10;
+
+1 row updated.
+
+SQL> commit;
+
+Commit complete.
+
+SQL>  update departments set department_name='TEST'  where department_id=10;
+
+1 row updated.
+
+SQL> commit;
+
+Commit complete.
+
+SQL>  column START_DATE format A22
+SQL>  column END_DATE format A22
+SQL>  SELECT versions_starttime "START_DATE", versions_endtime   "END_DATE",
+       salary
+FROM   employees    VERSIONS BETWEEN SCN MINVALUE AND MAXVALUE
+WHERE  employee_id = 100;  2    3    4
+
+START_DATE             END_DATE               DEPARTMENT_NAME
+---------------------- ---------------------- ------------------------------
+24-JUL-13 06.39.30 PM                         TEST
+24-JUL-13 06.39.15 PM  24-JUL-13 06.39.30 PM  ABC
+                       24-JUL-13 06.39.15 PM  Administration

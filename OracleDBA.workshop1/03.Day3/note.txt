@@ -1,0 +1,18 @@
+show parameter spfile ;
+
+#tool
+adrci 
+
+show parameter ddl;
+
+#THAY DỔI THAM SỐ HỆ THỐNG
+#NGAY GIỜ
+select sysdate from dual;
+alter session set nls_date_format='day dd hh:mi:ss'
+
+desc v$parameter
+show parameter job queue processes
+
+select * from v$diag_info;
+
+recover database until cancel;

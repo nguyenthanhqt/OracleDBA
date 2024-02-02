@@ -1,0 +1,12 @@
+SQL> select name from v$datafile;
+
+NAME
+--------------------------------------------------------------------------------
+/u01/app/oracle/oradata/ORCL19C/system01.dbf
+/u01/app/oracle/oradata/ORCL19C/sysaux01.dbf
+/u01/app/oracle/oradata/ORCL19C/undotbs01.dbf
+/u01/app/oracle/oradata/ORCL19C/streams_tbs01.dbf
+/u01/app/oracle/oradata/ORCL19C/users01.dbf
+
+SQL> create undo tablespace undotbs2 datafile '/u01/app/oracle/oradata/ORCL19C/undotbs2.dbf' size 10M autoextend on next 8M maxsize 1G;
+SQL> alter system set undo_tablespace='undotbs2'; 

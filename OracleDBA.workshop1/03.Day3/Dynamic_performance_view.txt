@@ -1,0 +1,108 @@
+- Gia lap 3 session cho lock
+--session 1:
+update hr.employees set salary=salary;
+-- session 2:
+update hr.employees set last_name=last_name;
+-- session 3:
+update hr.employees set first_name=first_name;
+-- System
+column wait_class format A22
+Select wait_class, sum(time_waited), sum(time_waited)/sum(total_waits) Sum_Waits
+ From v$system_wait_class
+ Group by wait_class
+ Order by 3 desc;
+
+WAIT_CLASS             SUM(TIME_WAITED)  SUM_WAITS
+---------------------- ---------------- ----------
+Application                       38719    19359.5
+Idle                            1612959 215.895998
+Commit                              205 9.31818182
+Concurrency                         554 3.87412587
+User I/O                          10184 2.05654281
+Other                              3189 1.67665615
+System I/O                         1820 .916414904
+Network                               0          0
+Configuration                         0          0
+
+9 rows selected.
+-- event
+column event format A25
+Select a.event, a.total_waits, a.time_waited, a.average_wait
+    From v$system_event a, v$event_name b, v$system_wait_class c
+    Where a.event_id=b.event_id
+    And b.wait_class#=c.wait_class#
+    And c.wait_class in ('Application','Concurrency','Configuration')
+   order by average_wait desc;
+
+EVENT                     TOTAL_WAITS TIME_WAITED AVERAGE_WAIT
+------------------------- ----------- ----------- ------------
+enq: TX - row lock conten           2       67832     33916.25
+tion
+
+library cache load lock            18         363        20.17
+os thread startup                  83         198         2.38
+cursor: pin S wait on X             5          10         1.98
+library cache: mutex X              4           1          .33
+row cache lock                     34           3           .1
+latch: shared pool                  4           0          .02
+latch: row cache objects            5           0          .01
+
+8 rows selected.
+-- session
+column event format A25
+select a.sid, a.event, a.total_waits, a.time_waited, a.average_wait
+from v$session_event a, v$session b
+where time_waited > 0
+and a.sid=b.sid
+and b.username is not NULL
+and a.event='enq: TX - row lock contention';
+
+       SID EVENT                     TOTAL_WAITS TIME_WAITED AVERAGE_WAIT
+---------- ------------------------- ----------- ----------- ------------
+        31 enq: TX - row lock conten           1       47416     47415.87
+           tion
+
+       156 enq: TX - row lock conten           1       49229     49229.05
+           tion
+
+-- Giu lock- Cho lock
+Select blocking_session, sid, serial#, wait_class,
+   seconds_in_wait
+   From v$session
+   where blocking_session is not NULL
+  order by blocking_session;
+
+BLOCKING_SESSION        SID    SERIAL# WAIT_CLASS             SECONDS_IN_WAIT
+---------------- ---------- ---------- ---------------------- ---------------
+              27        156          6 Application                        577
+              27         31         11 Application                        558
+
+--
+column username format A10
+column machine format A20
+column osuser format A8
+select sid, serial#, username, osuser, machine from v$session
+  where SID=27;
+
+       SID    SERIAL# USERNAME   OSUSER   MACHINE
+---------- ---------- ---------- -------- --------------------
+        27         16 HR         oracle   server.localdomain
+-- Final locker
+================ Kill Final Blocker ================
+select 
+--s1.username ||'@' ||s1.machine ||' ( SID=' ||s1.sid ||' SERIAL#=' ||s1.serial# ||' ) is blocking '||
+--s2.username || '@' || s2.machine ||' ( SID=' ||s2.sid ||' SERIAL#=' ||s2.serial# ||') for the last '||
+--sw.seconds_in_wait ||' seconds.'AS blocking_status,dbo.object_type||' '|| dbo.object_name AS blocked_object,
+'alter system kill session '''|| s1.sid ||','|| s1.serial# ||',@'|| s1.inst_id ||'''' ||' immediate;'  "Kill command"
+from gv$lock l1, gv$session s1, gv$lock l2, gv$session s2, gv$session_wait sw , dba_objects dbo, gv$locked_object lo
+where s1.sid=l1.sid
+and s2.sid=l2.sid
+and l1.BLOCK=1 and l2.request > 0
+and l1.id1 = l2.id1
+and l2.id2 = l2.id2
+and sw.sid = l2.sid
+and lo.session_id = s1.sid
+and lo.object_id = dbo.object_id
+and l1.sid = lo.session_id 
+group by 'alter system kill session '''|| s1.sid ||','|| s1.serial# ||',@'|| s1.inst_id ||'''' ||' immediate;' ;
+

@@ -1,0 +1,123 @@
+https://dangxuanduy.com/database/oracle/kich-thuoc-redo-log-bao-nhieu-la-hop-ly/
+
+Giới thiệu
+Kích thước Redo log nên đặt bao nhiêu là phù hợp?
+
+Redo log là file ghi lại các tất cả thay đổi trong database Oracle (bao gồm các thay đổi do người dùng tạo ra và do nội tại hệ thống tạo ra). Các thay đổi được ghi dưới dạng các change vector.
+
+Nếu đặt kích thước redo log nhỏ quá, sẽ dẫn đến log switch nhiều [wp-svg-icons icon=”arrow-right-2″ wrap=”i”] tăng tần số checkpoint [wp-svg-icons icon=”arrow-right-2″ wrap=”i”] hiệu năng giảm.
+
+Còn nếu đặt kích thước redo log lớn quá, thì lại tốn dung lượng lưu trữ + thời gian recovery lâu.
+
+ 
+
+Vậy kích thước redo log thế nào mới là hợp lý??
+
+ 
+
+Phương pháp tính Redo log size
+Nói đến kích thước redo log, người ta thường nhắc đến số lần xảy ra log switch trong 1h.
+
+ 
+
+Log switch là sự kiện khi tiến trình LGWR đã ghi đầy 1 redo log và chuyển sang ghi redo log tiếp theo
+
+ 
+
+Kích thước redo log càng lớn thì số lần log switch trong 1h càng ít và ngược lại.
+
+Bạn có thể dùng câu lệnh sau để kiểm tra 1h log switch xảy ra bao nhiêu lần trong database của bạn:
+
+set pages 999 lines 400
+col h0 format 999
+col h1 format 999
+col h2 format 999
+col h3 format 999
+col h4 format 999
+col h5 format 999
+col h6 format 999
+col h7 format 999
+col h8 format 999
+col h9 format 999
+col h10 format 999
+col h11 format 999
+col h12 format 999
+col h13 format 999
+col h14 format 999
+col h15 format 999
+col h16 format 999
+col h17 format 999
+col h18 format 999
+col h19 format 999
+col h20 format 999
+col h21 format 999
+col h22 format 999
+col h23 format 999
+SELECT TRUNC (first_time) "Date", inst_id, TO_CHAR (first_time, 'Dy') "Day",
+COUNT (1) "Total",
+SUM (DECODE (TO_CHAR (first_time, 'hh24'), '00', 1, 0)) "h0",
+SUM (DECODE (TO_CHAR (first_time, 'hh24'), '01', 1, 0)) "h1",
+SUM (DECODE (TO_CHAR (first_time, 'hh24'), '02', 1, 0)) "h2",
+SUM (DECODE (TO_CHAR (first_time, 'hh24'), '03', 1, 0)) "h3",
+SUM (DECODE (TO_CHAR (first_time, 'hh24'), '04', 1, 0)) "h4",
+SUM (DECODE (TO_CHAR (first_time, 'hh24'), '05', 1, 0)) "h5",
+SUM (DECODE (TO_CHAR (first_time, 'hh24'), '06', 1, 0)) "h6",
+SUM (DECODE (TO_CHAR (first_time, 'hh24'), '07', 1, 0)) "h7",
+SUM (DECODE (TO_CHAR (first_time, 'hh24'), '08', 1, 0)) "h8",
+SUM (DECODE (TO_CHAR (first_time, 'hh24'), '09', 1, 0)) "h9",
+SUM (DECODE (TO_CHAR (first_time, 'hh24'), '10', 1, 0)) "h10",
+SUM (DECODE (TO_CHAR (first_time, 'hh24'), '11', 1, 0)) "h11",
+SUM (DECODE (TO_CHAR (first_time, 'hh24'), '12', 1, 0)) "h12",
+SUM (DECODE (TO_CHAR (first_time, 'hh24'), '13', 1, 0)) "h13",
+SUM (DECODE (TO_CHAR (first_time, 'hh24'), '14', 1, 0)) "h14",
+SUM (DECODE (TO_CHAR (first_time, 'hh24'), '15', 1, 0)) "h15",
+SUM (DECODE (TO_CHAR (first_time, 'hh24'), '16', 1, 0)) "h16",
+SUM (DECODE (TO_CHAR (first_time, 'hh24'), '17', 1, 0)) "h17",
+SUM (DECODE (TO_CHAR (first_time, 'hh24'), '18', 1, 0)) "h18",
+SUM (DECODE (TO_CHAR (first_time, 'hh24'), '19', 1, 0)) "h19",
+SUM (DECODE (TO_CHAR (first_time, 'hh24'), '20', 1, 0)) "h20",
+SUM (DECODE (TO_CHAR (first_time, 'hh24'), '21', 1, 0)) "h21",
+SUM (DECODE (TO_CHAR (first_time, 'hh24'), '22', 1, 0)) "h22",
+SUM (DECODE (TO_CHAR (first_time, 'hh24'), '23', 1, 0)) "h23",
+ROUND (COUNT (1) / 24, 2) "Avg"
+FROM gv$log_history
+WHERE thread# = inst_id
+AND first_time > sysdate -7
+GROUP BY TRUNC (first_time), inst_id, TO_CHAR (first_time, 'Dy')
+ORDER BY 1,2;
+Kết quả:
+
+log switch
+
+Chú ý: Đây là database test nên số lượng switch log khá ít.
+
+Thông thường, các DBA thường cho rằng con số log switch trong 1h khoảng từ 5 – 7 lần là hợp lý.
+
+Một con số khá cảm tính! Không có gì chắc chắn nó là đúng cho tất cả các database.
+
+Oracle cung cấp cho chúng ta một công cụ để tính kích thước redo log. Đó là Redo Log Sizing Advisor.
+
+Thiết lập Redo Log Sizing Advisor
+Đầu tiên, bạn cần phải thiết lập giá trị cho tham số FAST_START_MTTR_TARGET.
+
+Giá trị của tham số này (tính theo giây) chỉ ra thời gian cần thiết để Oracle thực hiện instance recovery (sau khi database gặp các sự cố như mất điện đột ngột, sụt nguồn…). Trong các tài liệu thường gọi đó là thời gian mean time to recovery (MTTR).
+
+alter system set FAST_START_MTTR_TARGET=30;
+ 
+
+Sau khi thiết lập giá trị cho FAST_START_MTTR_TARGET, Oracle sẽ tự động điều chỉnh tần số checkpoint để đạt được mục tiêu instance recovery thoả mãn.
+
+Sau đó, dựa vào tần số checkpoint, Oracle ước tính được lượng redo log tối thiểu cần thiết.
+
+Chúng ta có thể xem con số ước lượng này bằng câu lệnh:
+
+select optimal_logfile_size from v$instance_recovery;
+Giả sử kết quả như sau:
+
+optimal log file size
+
+Đây là kích thước tối thiểu (tính theo MB) cho redo log file mà Oracle khuyến nghị chúng ta.
+
+Bạn có thể dựa vào đây để thay đổi kích thước redo log file cho phù hợp.
+
+Tham khảo thêm bài viết sau để biết cách thay đổi redo log size

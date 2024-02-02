@@ -1,0 +1,91 @@
+-- New 3 session, first with oratop, next with sh, last with  sys
+[oracle@localhost ~]$ ./oratop.RDBMS_12.1_LINUX_X64 system/oracle -d -f -i 5
+
+oratop: Release 14.1.2 Production on Mon May 18 08:46:48 2015
+Copyright (c) 2011, Oracle.  All rights reserved.
+
+Connecting ...
+
+
+oratop: Release 14.1.2 Production on Mon May 18 08:46:48 2015
+
+Copyright (c) 2011, Oracle.  All rights reserved.
+
+
+-- in another session with sh user
+[oracle@localhost ~]$ sqlplus sh/sh@localhost:1521/orcl
+
+SQL*Plus: Release 11.2.0.1.0 Production on Mon May 18 08:48:52 2015
+
+Copyright (c) 1982, 2009, Oracle.  All rights reserved.
+
+
+Connected to:
+Oracle Database 11g Enterprise Edition Release 11.2.0.1.0 - 64bit Production
+With the Partitioning, Automatic Storage Management, OLAP, Data Mining
+and Real Application Testing options
+
+SQL> drop table mysales;
+
+Table dropped.
+
+SQL> create table mysales as select * from sales where 2=1 ;
+
+Table created.
+
+SQL> alter table mysales nologging;
+
+Table altered.
+
+SQL> insert /*+ APPEND */ into mysales select * from sales;
+
+918843 rows created.
+
+SQL> EXEC dbms_stats.gather_table_stats(USER, 'mysales', cascade => TRUE);
+
+PL/SQL procedure successfully completed.
+-- Flush buffer cache shared_pool
+
+-- as sh
+Declare
+v_amount number;
+Begin
+for c_cust_id in (select cust_id from sh.customers)  loop
+select sum(AMOUNT_SOLD) into v_amount
+From sh.mysales
+where cust_id=c_cust_id.cust_id;
+end loop;
+end;
+/
+-- In oratop session get sql_id
+
+4cjzpnxbry794
+
+-- In sys session use sql tunig advisor
+
+DECLARE
+  my_task_name VARCHAR2(30);
+  BEGIN
+  my_task_name := DBMS_SQLTUNE.CREATE_TUNING_TASK (
+          sql_id=>'4cjzpnxbry794'
+,         scope       => 'COMPREHENSIVE'
+,         time_limit  => 6000
+,         task_name   => 'STA_SPECIFIC_TASK'
+,         description => 'Task to tune a query on a specified employee'
+);
+END;
+/
+--
+BEGIN
+  DBMS_SQLTUNE.EXECUTE_TUNING_TASK(task_name=>'STA_SPECIFIC_TASK');
+END;
+/
+--
+SET LONG 10000
+SET LONGCHUNKSIZE 10000
+SET LINESIZE 100
+SELECT DBMS_SQLTUNE.REPORT_TUNING_TASK( 'STA_SPECIFIC_TASK' )
+FROM   DUAL;
+-- execute advise
+ create index SH.IDX$$_03900001 on SH.MYSALES("CUST_ID");
+

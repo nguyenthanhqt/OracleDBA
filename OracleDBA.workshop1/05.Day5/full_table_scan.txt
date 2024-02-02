@@ -1,0 +1,288 @@
+[oracle@server ~]$ sqlplus sh/sh@localhost:1521/orcl
+
+SQL*Plus: Release 11.2.0.1.0 Production on Thu May 23 15:53:31 2013
+
+Copyright (c) 1982, 2009, Oracle.  All rights reserved.
+
+
+Connected to:
+Oracle Database 11g Enterprise Edition Release 11.2.0.1.0 - 64bit Production
+With the Partitioning, Automatic Storage Management, OLAP, Data Mining
+and Real Application Testing options
+
+SQL> CREATE TABLE sh.MY_SALES_ALL AS
+SELECT ROWNUM AS ID, X.* FROM sh.SALES X where rownum<=100000;  2
+
+Table created.
+
+SQL> CREATE TABLE sh.MY_SALES_2 AS
+SELECT * FROM sh.MY_SALES_ALL NOLOGGING;  2
+
+Table created.
+--
+EXEC DBMS_STATS.GATHER_TABLE_STATS('SH', 'MY_SALES_ALL',estimate_percent => 100,method_opt => 'for all columns size 1');
+EXEC DBMS_STATS.GATHER_TABLE_STATS('SH', 'MY_SALES_2',estimate_percent => 100,method_opt => 'for all columns size 1');
+--
+SQL> SELECT BLOCKS FROM DBA_TABLES
+WHERE TABLE_NAME IN ('MY_SALES_ALL', 'MY_SALES_2');  2
+
+    BLOCKS
+----------
+       567
+       567
+
+SQL>
+--
+SQL> DELETE FROM sh.MY_SALES_2 WHERE MOD(ID,100) <> 0;
+
+99000 rows deleted.
+
+SQL> COMMIT;
+
+Commit complete.
+--
+EXEC DBMS_STATS.GATHER_TABLE_STATS('SH', 'MY_SALES_2', estimate_percent => 100, method_opt => 'for all columns size 1');
+--
+SQL> SELECT BLOCKS FROM DBA_TABLES
+WHERE TABLE_NAME IN ('MY_SALES_ALL', 'MY_SALES_2');  2
+
+    BLOCKS
+----------
+       567
+       567
+
+SQL> select count(*) from MY_SALES_ALL;
+
+  COUNT(*)
+----------
+    100000
+
+SQL> select count(*) from MY_SALES_2;
+
+  COUNT(*)
+----------
+      1000
+
+SQL>
+--
+SQL> SET LINESIZE 120
+SET AUTOT TRACE EXP STAT
+SELECT * FROM sh.MY_SALES_ALL
+WHERE TIME_ID > TO_DATE('20011220', 'YYYYMMDD');SQL> SQL>   2
+
+no rows selected
+
+
+Execution Plan
+----------------------------------------------------------
+Plan hash value: 46892973
+
+----------------------------------------------------------------------------------
+| Id  | Operation         | Name         | Rows  | Bytes | Cost (%CPU)| Time     |
+----------------------------------------------------------------------------------
+|   0 | SELECT STATEMENT  |              |     1 |    34 |   156   (1)| 00:00:02 |
+|*  1 |  TABLE ACCESS FULL| MY_SALES_ALL |     1 |    34 |   156   (1)| 00:00:02 |
+----------------------------------------------------------------------------------
+
+Predicate Information (identified by operation id):
+---------------------------------------------------
+
+   1 - filter("TIME_ID">TO_DATE(' 2001-12-20 00:00:00', 'syyyy-mm-dd
+              hh24:mi:ss'))
+
+
+Statistics
+----------------------------------------------------------
+          1  recursive calls
+          0  db block gets
+        553  consistent gets
+          0  physical reads
+          0  redo size
+        827  bytes sent via SQL*Net to client
+        512  bytes received via SQL*Net from client
+          1  SQL*Net roundtrips to/from client
+          0  sorts (memory)
+          0  sorts (disk)
+          0  rows processed
+
+SQL>
+--
+SQL> CONNECT / AS SYSDBA
+Connected.
+SQL> ALTER SYSTEM FLUSH BUFFER_CACHE;
+
+System altered.
+
+SQL> conn sh/sh
+Connected.
+SQL> SET LINESIZE 120
+SET AUTOT TRACE EXP STAT
+SELECT * FROM sh.MY_SALES_2
+WHERE TIME_ID > TO_DATE('20011220', 'YYYYMMDD');
+SET AUTOT OFFSQL> SQL>   2
+no rows selected
+
+
+Execution Plan
+----------------------------------------------------------
+Plan hash value: 3083133199
+
+--------------------------------------------------------------------------------
+| Id  | Operation         | Name       | Rows  | Bytes | Cost (%CPU)| Time     |
+--------------------------------------------------------------------------------
+|   0 | SELECT STATEMENT  |            |     1 |    33 |   155   (0)| 00:00:02 |
+|*  1 |  TABLE ACCESS FULL| MY_SALES_2 |     1 |    33 |   155   (0)| 00:00:02 |
+--------------------------------------------------------------------------------
+
+Predicate Information (identified by operation id):
+---------------------------------------------------
+
+   1 - filter("TIME_ID">TO_DATE(' 2001-12-20 00:00:00', 'syyyy-mm-dd
+              hh24:mi:ss'))
+
+
+Statistics
+----------------------------------------------------------
+          1  recursive calls
+          0  db block gets
+        553  consistent gets
+        550  physical reads
+          0  redo size
+        827  bytes sent via SQL*Net to client
+        512  bytes received via SQL*Net from client
+          1  SQL*Net roundtrips to/from client
+          0  sorts (memory)
+          0  sorts (disk)
+          0  rows processed
+
+SQL>
+-- Xac dinh phan manh
+set serveroutput on
+declare
+           v_unformatted_blocks number;
+           v_unformatted_bytes number;
+           v_fs1_blocks number;
+           v_fs1_bytes number;
+           v_fs2_blocks number;
+           v_fs2_bytes number;
+           v_fs3_blocks number;
+           v_fs3_bytes number;
+           v_fs4_blocks number;
+           v_fs4_bytes number;
+           v_full_blocks number;
+           v_full_bytes number;
+       begin
+          dbms_space.space_usage ('&owner', '&segment_name', '&Type_TABLE_INDEX_CLUSTER', v_unformatted_blocks,
+          v_unformatted_bytes, v_fs1_blocks, v_fs1_bytes, v_fs2_blocks, v_fs2_bytes,
+          v_fs3_blocks, v_fs3_bytes, v_fs4_blocks, v_fs4_bytes, v_full_blocks, v_full_bytes);
+          dbms_output.put_line('Unformatted Blocks = '||v_unformatted_blocks);
+          dbms_output.put_line('FS1 Blocks       = '||v_fs1_blocks);
+          dbms_output.put_line('FS2 Blocks       = '||v_fs2_blocks);
+          dbms_output.put_line('FS3 Blocks       = '||v_fs3_blocks);
+          dbms_output.put_line('FS4 Blocks       = '||v_fs4_blocks);
+          dbms_output.put_line('Full Blocks       = '||v_full_blocks);
+   end;
+ /
+--  
+
+select table_name,round((blocks*8),2)||'kb' "size"
+ from user_tables
+ where table_name = '&SEGMENT_NAME';  2    3
+-- 4536kb=4644864Byte
+select table_name,round((num_rows*avg_row_len/1024),2)||'kb' "size"
+ from dba_tables
+ where table_name = 'MY_SALES_2';
+-- 32.23kb=33003.52 byte ~ 35000
+-- So byte can thu hoi la:4609864 
+set serveroutput on
+BEGIN
+  IF (dbms_space.verify_shrink_candidate('SH', '&SEGMENT_NAME', 'TABLE', &sobytecanthuhoi)) THEN
+    dbms_output.put_line('Shinkable');
+  ELSE
+    dbms_output.put_line('Not Shinkable');
+  END IF;
+END;
+/
+-- Cach 1
+SQL> ALTER TABLE sh.MY_SALES_2 ENABLE ROW MOVEMENT;
+
+Table altered.
+
+SQL> ALTER TABLE sh.MY_SALES_2 SHRINK SPACE;
+
+Table altered.
+
+SQL>  ALTER TABLE sh.MY_SALES_2 DISABLE ROW MOVEMENT;
+
+SQL> EXEC DBMS_STATS.GATHER_TABLE_STATS('SH', 'MY_SALES_2', estimate_percent => 100, method_opt => 'for all columns size 1');
+
+PL/SQL procedure successfully completed.
+
+SQL>
+--
+SQL> SELECT BLOCKS FROM DBA_TABLES
+WHERE TABLE_NAME IN ('MY_SALES_ALL', 'MY_SALES_2');  2
+
+    BLOCKS
+----------
+       567
+         8
+
+################### Cleanup ########################
+DROP TABLE sh.MY_SALES_ALL;
+DROP TABLE sh.MY_SALES_2;
+-- Cach 2 
+-- cach 2 Online redefinition
+-- Tao interim
+CREATE TABLE sh.MY_SALES_2_INT TABLESPACE USERS 
+AS select * from MY_SALES_2 where 2=1
+;
+-- conn system
+-- Step 2 check interim can redefinition
+begin
+dbms_redefinition.can_redef_table (uname => 'SH', tname=>'MY_SALES_2',
+options_flag=>dbms_redefinition.cons_use_rowid);
+end;
+/
+-- Step 3 (So anh huong he thong, khong parallel)
+ALTER SESSION FORCE PARALLEL DML PARALLEL 2;
+ALTER SESSION FORCE PARALLEL QUERY PARALLEL 2;
+-- Step 4 start redifination
+begin
+dbms_redefinition.start_redef_table (uname => 'SH',
+orig_table=>'MY_SALES_2',
+int_table=>'MY_SALES_2_INT',
+options_flag=>dbms_redefinition.cons_use_rowid);
+end;
+/
+-- sync
+begin
+dbms_redefinition.SYNC_INTERIM_TABLE (uname => 'SH',
+orig_table=>'MY_SALES_2',
+int_table=>'MY_SALES_2_INT');
+end;
+/
+
+--Step 5 finish
+begin
+dbms_redefinition.finish_redef_table (uname => 'SH',
+orig_table=>'MY_SALES_2',
+int_table=>'MY_SALES_2_INT');
+end;
+/
+-- 5.1
+-- Drop table interim
+drop table SH.MY_SALES_2_INT;
+-- Kiem tra lai
+SQL>EXEC DBMS_STATS.GATHER_TABLE_STATS('SH', 'MY_SALES_2', estimate_percent => 100, method_opt => 'for all columns size 1');
+
+Table analyzed.
+
+SQL> SELECT BLOCKS FROM DBA_TABLES
+WHERE TABLE_NAME IN ('MY_SALES_ALL', 'MY_SALES_2');  2  
+
+    BLOCKS
+----------
+       567
+	24
+

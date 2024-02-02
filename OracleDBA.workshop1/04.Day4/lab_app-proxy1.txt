@@ -1,0 +1,167 @@
+-- Moi truong
++ CDB1 chứa:
+ - toys_root
+   -- Dolls
+   -- Robots và 
+   -- px_app_rr (proxy reference tới Toys_rr)
++ CDB1 chứa:
+- Toys_rr 
+  -- Doodles    
+1/ Tao app container Toys_root (CDB1)
+mkdir -p /u01/app/oracle/oradata/CDB1/toys_root 
+-- Set OMF
+SQL> alter system set db_create_file_dest='/u01/app/oracle/oradata/CDB1/toys_root';
+-- Tao app container Toys_root
+SQL> create pluggable database toys_root as application container admin user pdbadmin identified by oracle roles=(connect,dba);
+-- open toys_root
+SQL> alter pluggable database toys_root open;
+-- connect vao toys_root
+SQL> alter session set container=toys_root;
+-- Tao app pdb DOLLS
+SQL> create pluggable database DOLLS admin user pdbadmin identified by oracle roles=(connect,dba);
+-- Tao app pdb ROBOTS
+SQL> create pluggable database ROBOTS admin user pdbadmin identified by oracle roles=(connect,dba);
+-- Open all pdb
+SQL> alter pluggable database all open;
+-- Install application toys_app (Lưu ý đang ở trong toys_root)
+ALTER PLUGGABLE DATABASE APPLICATION toys_app begin install '1.0';
+create user toys_owner identified by oracle container=all
+/
+grant create session, dba to toys_owner
+/
+create table toys_owner.sales_data sharing=metadata 
+(year       number(4),
+ region     varchar2(10),
+ quarter    varchar2(4),
+ revenue    number)
+/
+create table toys_owner.codes sharing=object 
+(code  number(4), label varchar2(10))
+/
+insert into toys_owner.codes values (1,'Puppet');
+insert into toys_owner.codes values (2,'Car');
+commit
+/
+ALTER PLUGGABLE DATABASE APPLICATION toys_app end install '1.0';
+-- Sync app trong từng app pdb
+SQL> alter session set container=robots;
+SQL> alter pluggable database application toys_app sync;
+SQL> select * from  toys_owner.codes;
+
+      CODE LABEL
+---------- ----------
+         1 Puppet
+         2 Car
+SQL> alter session set container=dolls;
+SQL> alter pluggable database application toys_app sync;
+SQL> select * from  toys_owner.codes;
+
+      CODE LABEL
+---------- ----------
+         1 Puppet
+         2 Car
+-- Tao application container toys_rr trong CDB2
+-- Cau hinh OMF
+SQL> ! mkdir -p /u01/app/oracle/oradata/CDB2/toys_rr
+SQL> alter system set db_create_file_dest='/u01/app/oracle/oradata/CDB2/toys_rr';
+-- Tao toys_rr
+SQL> create pluggable database toys_rr as application container admin user pdbadmin identified by oracle roles=(connect,dba);
+-- Open toys_rr
+SQL> alter pluggable database toys_rr open;
+-- Tao application proxy pdb trong CDB1 (trong toys_root)
+ SQL> conn sys/oracle@localhost:1521/toys_root as sysdba
+--
+SQL> create public database link CDB2_LINK connect to system identified by oracle using 'localhost:1521/CDB2';
+-- Test
+SQL> select * from dual@CDB2_LINK;
+D
+-
+X
+--
+SQL> grant create pluggable database to system container=all;
+-- connect với user system
+conn system/oracle@localhost:1521/toys_root
+create pluggable database px_app_rr as proxy from toys_rr@CDB2_LINK;
+-- connect voi sys
+conn sys/oracle@localhost:1521/toys_root as sysdba
+-- open px_app_rr
+SQL> alter pluggable database px_app_rr open;
+-- Ket noi vao px_app_rr để sync  application toys_app
+SQL> alter session set container=px_app_rr;
+SQL> alter pluggable database application toys_app sync;
+-- Trong CDB2 (Trong toys_rr tao app pdb doodles)
+SQL> alter session set container=toys_rr;
+SQL> create pluggable database doodles admin user pdbadmin identified by oracle roles=(connect,dba);
+SQL> alter pluggable database doodles open;
+SQL> alter session set container=doodles;
+SQL> alter pluggable database application toys_app sync;
+-- test
+SQL> select * from  toys_owner.codes;
+      CODE LABEL
+---------- ----------
+         1 Puppet
+         2 Car
+-- Relocate database ROBOTS tu CDB1 --> CDB2 
+SQL>  alter session set container=toys_rr;
+
+Session altered.
+
+SQL> create public database link CDB1_LINK connect to system identified by oracle using 'localhost:1521/CDB1';
+
+Database link created.
+
+SQL> select * from dual@CDB1_LINK;
+
+D
+-
+X
+
+SQL> grant create pluggable database to system container=all;
+SQL> GRANT SYSOPER TO system container=all;
+--
+SQL> conn system/oracle@localhost:1521/toys_rr
+Connected.
+SQL> create pluggable database robots from robots@CDB1_LINK relocate;
+--
+SQL> conn sys/oracle@localhost:1521/toys_rr as sysdba
+Connected.
+SQL> alter pluggable database robots open;
+
+Pluggable database altered.
+-- Check
+SQL> alter session set container=robots;
+
+Session altered.
+
+SQL> select * from toys_owner.codes;
+
+      CODE LABEL
+---------- ----------
+         1 Puppet
+         2 Car
+-- Insert trong CDB1
+SQL> alter pluggable database application toys_app begin upgrade to '1.1';
+SQL> insert into toys_owner.codes values(3,'Game');
+SQL> commit;
+SQL> alter pluggable database application toys_app end upgrade;
+-- SYNC qua proxy
+SQL> alter session set container=px_app_rr;
+SQL> alter pluggable database application toys_app sync;
+SQL> select * from toys_owner.codes;
+      CODE LABEL
+---------- ----------
+         1 Puppet
+         2 Car
+         3 Game
+-- Sync qua CDB2 (remote)
+SQL> alter session set container=robots;
+SQL> alter pluggable database application toys_app sync;
+SQL> select * from toys_owner.codes;
+      CODE LABEL
+---------- ----------
+         1 Puppet
+         2 Car
+         3 Game
+
+
+

@@ -1,0 +1,105 @@
+-- Mo mot session dung oratop voi user sys
+[oracle@localhost ~]$ $ORACLE_HOME/suptools/oratop/oratop -r -f -i 5 / as sysdba
+-- Trong mot session khac ket noi voi user sh
+[oracle@localhost ~]$ sqlplus sh/sh@localhost:1521/orcl
+
+SQL*Plus: Release 19.0.0.0.0 - Production on Fri Jan 12 13:55:45 2024
+Version 19.17.0.0.0
+
+Copyright (c) 1982, 2022, Oracle.  All rights reserved.
+
+Last Successful login time: Tue Jan 09 2024 16:11:24 +07:00
+
+Connected to:
+Oracle Database 19c Enterprise Edition Release 19.0.0.0.0 - Production
+Version 19.17.0.0.0
+
+SQL> drop table mysales;
+
+Table dropped.
+
+SQL> create table mysales as select * from sales;
+
+Table created.
+
+SQL> EXEC dbms_stats.gather_table_stats(USER, 'mysales', cascade => TRUE);
+
+PL/SQL procedure successfully completed.
+
+SQL>
+-- as sysdba
+alter system flush buffer_cache;
+-- as sh
+Declare
+v_amount number;
+Begin
+--execute immediate 'alter system flush buffer_cache';
+for c_cust_id in (select cust_id from sh.customers)  loop
+select sum(AMOUNT_SOLD) into v_amount
+From sh.mysales
+where cust_id=c_cust_id.cust_id;
+end loop;
+end;
+/
+--> co hien tuong direct path read
+-- Mo mot session voi sys
+
+select event,
+sum(wait_time +
+time_waited) total_wait_time
+from v$active_session_history
+where sample_time between
+sysdate -15/1440 and sysdate
+group by event
+order by total_wait_time desc;
+
+select s.sid, s.username,
+sum(a.wait_time +
+a.time_waited) total_wait_time
+from v$active_session_history a,
+v$session s
+where a.sample_time between sysdate - 15/1440 and sysdate
+and a.session_id=s.sid
+group by s.sid, s.username
+order by total_wait_time desc;
+
+select u.username,s.sql_text,a.event,
+sum(a.wait_time + a.time_waited) total_wait_time
+from v$active_session_history a,
+v$sqlarea s,
+cdb_users u
+where a.sample_time between sysdate -15/1440 and sysdate
+and a.sql_id = s.sql_id
+and a.user_id = u.user_id
+and u.username not in ('SYS','SYSTEM','SYSMAN','DBSNMP')
+group by a.event,s.sql_text, u.username
+order by 4; 
+--
+select segment_name, partition_name, segment_type, tablespace_name
+from   cdb_extents a, v$active_session_history b
+where  b.p2 between a.block_id and (a.block_id + a.blocks - 1)
+and    a.file_id  = b.p1
+and    b.event    = 'direct path read'
+and    b.sample_time between sysdate -15/1440 and sysdate
+and    a.owner ='SH';
+--  Xac dinh Histogram for Wait Event: direct path read
+select 
+   wait_time_milli,
+   wait_count
+from 
+   v$event_histogram
+where 
+   event = 'direct path read'
+order by wait_time_milli;
+-- Neu khao sat phia OS
+select s.sid, s.serial#, s.username,s.machine, s.osuser
+from  gv$session s, gv$process p
+where p.spid=nvl('&unix_process',' ')
+and s.paddr=p.addr
+order by s.sid;
+
+--  Solution create index:
+alter session set container=orcl
+create index sh.mysales_cust_id_idx on sh.mysales(cust_id,AMOUNT_SOLD);
+EXEC dbms_stats.gather_table_stats('sh', 'mysales', cascade => TRUE);
+

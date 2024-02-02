@@ -1,0 +1,288 @@
+SQL> select GROUP#,SEQUENCE#,STATUS from v$log;
+
+    GROUP#  SEQUENCE# STATUS
+---------- ---------- ----------------
+	 1	   10 CURRENT
+	 2	    8 INACTIVE
+	 3	    9 INACTIVE
+-- Trong session khac
+[oracle@localhost ~]$ sqlplus hr/hr@localhost:1521/orcl
+
+SQL*Plus: Release 19.0.0.0.0 - Production on Sat Aug 27 15:48:23 2022
+Version 19.3.0.0.0
+
+Copyright (c) 1982, 2019, Oracle.  All rights reserved.
+
+Last Successful login time: Sat Aug 27 2022 15:40:49 +07:00
+
+Connected to:
+Oracle Database 19c Enterprise Edition Release 19.0.0.0.0 - Production
+Version 19.3.0.0.0
+
+SQL> select salary from employees;
+
+    SALARY
+----------
+      2600
+      2600
+      4400
+     13000
+      6000
+      6500
+     10000
+     12008
+      8300
+     24000
+     17000
+
+    SALARY
+----------
+     17000
+      9000
+      6000
+      4800
+      4800
+      4200
+     12008
+      9000
+      8200
+      7700
+      7800
+
+    SALARY
+----------
+      6900
+     11000
+      3100
+      2900
+      2800
+      2600
+      2500
+      8000
+      8200
+      7900
+      6500
+
+    SALARY
+----------
+      5800
+      3200
+      2700
+      2400
+      2200
+      3300
+      2800
+      2500
+      2100
+      3300
+      2900
+
+    SALARY
+----------
+      2400
+      2200
+      3600
+      3200
+      2700
+      2500
+      3500
+      3100
+      2600
+      2500
+     14000
+
+    SALARY
+----------
+     13500
+     12000
+     11000
+     10500
+     10000
+      9500
+      9000
+      8000
+      7500
+      7000
+     10000
+
+    SALARY
+----------
+      9500
+      9000
+      8000
+      7500
+      7000
+     10500
+      9500
+      7200
+      6800
+      6400
+      6200
+
+    SALARY
+----------
+     11500
+     10000
+      9600
+      7400
+      7300
+      6100
+     11000
+      8800
+      8600
+      8400
+      7000
+
+    SALARY
+----------
+      6200
+      3200
+      3100
+      2500
+      2800
+      4200
+      4100
+      3400
+      3000
+      3800
+      3600
+
+    SALARY
+----------
+      2900
+      2500
+      4000
+      3900
+      3200
+      2800
+      3100
+      3000
+
+107 rows selected.
+
+SQL> update hr.employees set salary=1000;
+
+107 rows updated.
+
+SQL> commit;
+
+Commit complete.
+
+SQL> exit
+--
+SQL> ! rm -rf /u01/app/oracle/oradata/ORCLCDB/redo01.log
+
+SQL> shutdown abort
+ORACLE instance shut down.
+SQL> startup
+ORACLE instance started.
+
+Total System Global Area  838858864 bytes
+Fixed Size		    9140336 bytes
+Variable Size		  306184192 bytes
+Database Buffers	  520093696 bytes
+Redo Buffers		    3440640 bytes
+Database mounted.
+ORA-00313: open failed for members of log group 1 of thread 1
+ORA-00312: online log 1 thread 1: '/u01/app/oracle/oradata/ORCLCDB/redo01.log'
+ORA-27037: unable to obtain file status
+Linux-x86_64 Error: 2: No such file or directory
+Additional information: 7
+
+
+SQL> recover database until cancel;
+ORA-00279: change 2450490 generated at 08/27/2022 15:47:53 needed for thread 1
+ORA-00289: suggestion :
+/u01/app/oracle/product/19.0.0/dbhome_1/dbs/arch1_10_1113143308.dbf
+ORA-00280: change 2450490 for thread 1 is in sequence #10
+
+
+Specify log: {<RET>=suggested | filename | AUTO | CANCEL}
+AUTO
+ORA-00308: cannot open archived log
+'/u01/app/oracle/product/19.0.0/dbhome_1/dbs/arch1_10_1113143308.dbf'
+ORA-27037: unable to obtain file status
+Linux-x86_64 Error: 2: No such file or directory
+Additional information: 7
+
+
+ORA-00308: cannot open archived log
+'/u01/app/oracle/product/19.0.0/dbhome_1/dbs/arch1_10_1113143308.dbf'
+ORA-27037: unable to obtain file status
+Linux-x86_64 Error: 2: No such file or directory
+Additional information: 7
+
+
+ORA-01547: warning: RECOVER succeeded but OPEN RESETLOGS would get error below
+ORA-01194: file 1 needs more recovery to be consistent
+ORA-01110: data file 1: '/u01/app/oracle/oradata/ORCLCDB/system01.dbf'
+
+
+SQL> select fuzzy, status, checkpoint_change#,
+       to_char(checkpoint_time, 'DD-MON-YYYY HH24:MI:SS') as checkpoint_time,
+       count(*)
+     from v$datafile_header
+    group by fuzzy, status, checkpoint_change#, checkpoint_time;   2    3    4    5  
+
+FUZ STATUS  CHECKPOINT_CHANGE# CHECKPOINT_TIME		       COUNT(*)
+--- ------- ------------------ ----------------------------- ----------
+NO  ONLINE	       2140919 19-AUG-2022 14:53:25		      3
+YES ONLINE	       2450490 27-AUG-2022 15:47:53		      8
+
+SQL> alter system set "_allow_resetlogs_corruption"=true scope=spfile;
+
+System altered.
+
+SQL> alter system set undo_management='MANUAL' scope=spfile;
+
+System altered.
+
+SQL> shutdown abort;
+ORACLE instance shut down.
+SQL> startup mount;
+ORACLE instance started.
+
+Total System Global Area  838858864 bytes
+Fixed Size		    9140336 bytes
+Variable Size		  306184192 bytes
+Database Buffers	  520093696 bytes
+Redo Buffers		    3440640 bytes
+Database mounted.
+SQL> alter database open resetlogs;
+
+Database altered.
+
+SQL> ! ls /u01/app/oracle/oradata/ORCLCDB/redo01.log
+/u01/app/oracle/oradata/ORCLCDB/redo01.log
+
+SQL> alter pluggable database orcl open;
+
+Pluggable database altered.
+
+SQL> 
+--
+[oracle@localhost ~]$ sqlplus hr/hr@localhost:1521/orcl
+
+SQL*Plus: Release 19.0.0.0.0 - Production on Sat Aug 27 15:57:45 2022
+Version 19.3.0.0.0
+
+Copyright (c) 1982, 2019, Oracle.  All rights reserved.
+
+Last Successful login time: Sat Aug 27 2022 15:40:49 +07:00
+
+Connected to:
+Oracle Database 19c Enterprise Edition Release 19.0.0.0.0 - Production
+Version 19.3.0.0.0
+
+SQL> select salary from employees where rownum<=3;
+
+    SALARY
+----------
+      2600
+      2600
+      4400
+
+SQL> 
+
+
+

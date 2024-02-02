@@ -1,0 +1,478 @@
+-- Tao directory
+[oracle@node01 ~]$ . oraenv
+ORACLE_SID = [orcl] ? orclcdb
+The Oracle base remains unchanged with value /u01/app/oracle
+[oracle@node01 ~]$ sqlplus sys/oracle@localhost:1521/orcl as sysdba
+
+SQL*Plus: Release 19.0.0.0.0 - Production on Thu Apr 6 10:26:14 2023
+Version 19.3.0.0.0
+
+Copyright (c) 1982, 2019, Oracle.  All rights reserved.
+
+
+Connected to:
+Oracle Database 19c Enterprise Edition Release 19.0.0.0.0 - Production
+Version 19.3.0.0.0
+
+SQL> create directory tmp_dir as '/tmp';
+
+Directory created.
+-- Dua datafile chua data cua user vào che do read only
+SQL> select name from v$tablespace;
+
+NAME
+------------------------------
+SYSTEM
+SYSAUX
+UNDOTBS1
+TEMP
+USERS
+
+SQL> alter tablespace users read only;
+
+Tablespace altered.
+
+SQL>
+-- Thuc hiện export
+[oracle@node01 schema]$ expdp system/oracle@localhost:1721/orcl full=y TRANSPORTABLE=always dumpfile=orcl.dmp directory=tmp_dir
+
+Export: Release 19.0.0.0.0 - Production on Thu Apr 6 10:27:46 2023
+Version 19.3.0.0.0
+
+Copyright (c) 1982, 2019, Oracle and/or its affiliates.  All rights reserved.
+
+Connected to: Oracle Database 19c Enterprise Edition Release 19.0.0.0.0 - Production
+Starting "SYSTEM"."SYS_EXPORT_FULL_01":  system/********@localhost:1721/orcl full=y TRANSPORTABLE=always dumpfile=orcl.dmp directory=tmp_dir
+Processing object type DATABASE_EXPORT/EARLY_OPTIONS/VIEWS_AS_TABLES/TABLE_DATA
+Processing object type DATABASE_EXPORT/NORMAL_OPTIONS/TABLE_DATA
+Processing object type DATABASE_EXPORT/NORMAL_OPTIONS/VIEWS_AS_TABLES/TABLE_DATA
+Processing object type DATABASE_EXPORT/SCHEMA/TABLE/TABLE_DATA
+Processing object type DATABASE_EXPORT/SCHEMA/TABLE/INDEX/STATISTICS/INDEX_STATISTICS
+Processing object type DATABASE_EXPORT/SCHEMA/TABLE/INDEX/STATISTICS/FUNCTIONAL_INDEX/INDEX_STATISTICS
+Processing object type DATABASE_EXPORT/SCHEMA/TABLE/INDEX/STATISTICS/BITMAP_INDEX/INDEX_STATISTICS
+Processing object type DATABASE_EXPORT/SCHEMA/TABLE/STATISTICS/TABLE_STATISTICS
+Processing object type DATABASE_EXPORT/STATISTICS/MARKER
+Processing object type DATABASE_EXPORT/PLUGTS_FULL/FULL/PLUGTS_TABLESPACE
+Processing object type DATABASE_EXPORT/PLUGTS_FULL/PLUGTS_BLK
+Processing object type DATABASE_EXPORT/END_PLUGTS_BLK
+Processing object type DATABASE_EXPORT/PRE_SYSTEM_IMPCALLOUT/MARKER
+Processing object type DATABASE_EXPORT/PRE_INSTANCE_IMPCALLOUT/MARKER
+Processing object type DATABASE_EXPORT/TABLESPACE
+Processing object type DATABASE_EXPORT/PROFILE
+Processing object type DATABASE_EXPORT/SCHEMA/USER
+Processing object type DATABASE_EXPORT/RADM_FPTM
+Processing object type DATABASE_EXPORT/GRANT/SYSTEM_GRANT/PROC_SYSTEM_GRANT
+Processing object type DATABASE_EXPORT/SCHEMA/GRANT/SYSTEM_GRANT
+Processing object type DATABASE_EXPORT/SCHEMA/ROLE_GRANT
+Processing object type DATABASE_EXPORT/SCHEMA/DEFAULT_ROLE
+Processing object type DATABASE_EXPORT/SCHEMA/ON_USER_GRANT
+Processing object type DATABASE_EXPORT/SCHEMA/TABLESPACE_QUOTA
+Processing object type DATABASE_EXPORT/RESOURCE_COST
+Processing object type DATABASE_EXPORT/TRUSTED_DB_LINK
+Processing object type DATABASE_EXPORT/SCHEMA/SEQUENCE/SEQUENCE
+Processing object type DATABASE_EXPORT/DIRECTORY/DIRECTORY
+Processing object type DATABASE_EXPORT/DIRECTORY/GRANT/OWNER_GRANT/OBJECT_GRANT
+Processing object type DATABASE_EXPORT/SCHEMA/SYNONYM
+Processing object type DATABASE_EXPORT/SCHEMA/TYPE/INC_TYPE
+Processing object type DATABASE_EXPORT/SCHEMA/TYPE/TYPE_SPEC
+Processing object type DATABASE_EXPORT/SCHEMA/TYPE/GRANT/OWNER_GRANT/OBJECT_GRANT
+Processing object type DATABASE_EXPORT/SYSTEM_PROCOBJACT/PRE_SYSTEM_ACTIONS/PROCACT_SYSTEM
+Processing object type DATABASE_EXPORT/SYSTEM_PROCOBJACT/PROCOBJ
+Processing object type DATABASE_EXPORT/SYSTEM_PROCOBJACT/POST_SYSTEM_ACTIONS/PROCACT_SYSTEM
+Processing object type DATABASE_EXPORT/SCHEMA/PROCACT_SCHEMA
+Processing object type DATABASE_EXPORT/EARLY_OPTIONS/VIEWS_AS_TABLES/TABLE
+Processing object type DATABASE_EXPORT/EARLY_POST_INSTANCE_IMPCALLOUT/MARKER
+Processing object type DATABASE_EXPORT/SCHEMA/XMLSCHEMA/XMLSCHEMA
+Processing object type DATABASE_EXPORT/NORMAL_OPTIONS/TABLE
+Processing object type DATABASE_EXPORT/NORMAL_OPTIONS/VIEWS_AS_TABLES/TABLE
+Processing object type DATABASE_EXPORT/NORMAL_POST_INSTANCE_IMPCALLOUT/MARKER
+Processing object type DATABASE_EXPORT/SCHEMA/TABLE/TABLE
+Processing object type DATABASE_EXPORT/SCHEMA/TABLE/GRANT/OWNER_GRANT/OBJECT_GRANT
+Processing object type DATABASE_EXPORT/SCHEMA/TABLE/COMMENT
+Processing object type DATABASE_EXPORT/SCHEMA/FUNCTION/FUNCTION
+Processing object type DATABASE_EXPORT/SCHEMA/PROCEDURE/PROCEDURE
+Processing object type DATABASE_EXPORT/SCHEMA/FUNCTION/ALTER_FUNCTION
+Processing object type DATABASE_EXPORT/SCHEMA/PROCEDURE/ALTER_PROCEDURE
+Processing object type DATABASE_EXPORT/SCHEMA/VIEW/VIEW
+Processing object type DATABASE_EXPORT/SCHEMA/VIEW/GRANT/OWNER_GRANT/OBJECT_GRANT
+Processing object type DATABASE_EXPORT/SCHEMA/VIEW/COMMENT
+Processing object type DATABASE_EXPORT/SCHEMA/TYPE/TYPE_BODY
+Processing object type DATABASE_EXPORT/SCHEMA/TABLE/INDEX/INDEX
+Processing object type DATABASE_EXPORT/SCHEMA/TABLE/INDEX/FUNCTIONAL_INDEX/INDEX
+Processing object type DATABASE_EXPORT/SCHEMA/TABLE/CONSTRAINT/CONSTRAINT
+Processing object type DATABASE_EXPORT/SCHEMA/TABLE/CONSTRAINT/REF_CONSTRAINT
+Processing object type DATABASE_EXPORT/SCHEMA/TABLE/INDEX/BITMAP_INDEX/INDEX
+Processing object type DATABASE_EXPORT/SCHEMA/TABLE/INDEX/DOMAIN_INDEX/SECONDARY_TABLE/TABLE
+Processing object type DATABASE_EXPORT/SCHEMA/TABLE/INDEX/DOMAIN_INDEX/SECONDARY_TABLE/INDEX/INDEX
+Processing object type DATABASE_EXPORT/SCHEMA/TABLE/INDEX/DOMAIN_INDEX/SECONDARY_TABLE/CONSTRAINT
+Processing object type DATABASE_EXPORT/SCHEMA/TABLE/INDEX/DOMAIN_INDEX/INDEX
+Processing object type DATABASE_EXPORT/SCHEMA/TABLE/TRIGGER
+Processing object type DATABASE_EXPORT/SCHEMA/VIEW/TRIGGER
+Processing object type DATABASE_EXPORT/SCHEMA/MATERIALIZED_VIEW
+Processing object type DATABASE_EXPORT/SCHEMA/DIMENSION
+Processing object type DATABASE_EXPORT/FINAL_POST_INSTANCE_IMPCALLOUT/MARKER
+Processing object type DATABASE_EXPORT/SCHEMA/TABLE/POST_INSTANCE/PROCACT_INSTANCE
+Processing object type DATABASE_EXPORT/SCHEMA/TABLE/POST_INSTANCE/PROCDEPOBJ
+Processing object type DATABASE_EXPORT/SCHEMA/POST_SCHEMA/PROCOBJ
+Processing object type DATABASE_EXPORT/SCHEMA/POST_SCHEMA/PROCACT_SCHEMA
+Processing object type DATABASE_EXPORT/AUDIT_UNIFIED/AUDIT_POLICY_ENABLE
+Processing object type DATABASE_EXPORT/POST_SYSTEM_IMPCALLOUT/MARKER
+. . exported "SYS"."KU$_USER_MAPPING_VIEW"               6.156 KB      45 rows
+. . exported "SYSTEM"."REDO_DB"                          25.59 KB       1 rows
+. . exported "WMSYS"."WM$WORKSPACES_TABLE$"              12.10 KB       1 rows
+. . exported "WMSYS"."WM$HINT_TABLE$"                    9.984 KB      97 rows
+. . exported "LBACSYS"."OLS$INSTALLATIONS"               6.960 KB       2 rows
+. . exported "WMSYS"."WM$WORKSPACE_PRIV_TABLE$"          7.078 KB      11 rows
+. . exported "SYS"."DAM_CONFIG_PARAM$"                   6.531 KB      14 rows
+. . exported "SYS"."TSDP_SUBPOL$"                        6.328 KB       1 rows
+. . exported "WMSYS"."WM$NEXTVER_TABLE$"                 6.375 KB       1 rows
+. . exported "LBACSYS"."OLS$PROPS"                       6.234 KB       5 rows
+. . exported "WMSYS"."WM$ENV_VARS$"                      6.015 KB       3 rows
+. . exported "SYS"."TSDP_PARAMETER$"                     5.953 KB       1 rows
+. . exported "SYS"."TSDP_POLICY$"                        5.921 KB       1 rows
+. . exported "WMSYS"."WM$VERSION_HIERARCHY_TABLE$"       5.984 KB       1 rows
+. . exported "WMSYS"."WM$EVENTS_INFO$"                   5.812 KB      12 rows
+. . exported "LBACSYS"."OLS$AUDIT_ACTIONS"               5.757 KB       8 rows
+. . exported "LBACSYS"."OLS$DIP_EVENTS"                  5.539 KB       2 rows
+. . exported "AUDSYS"."AUD$UNIFIED":"AUD_UNIFIED_P0"         0 KB       0 rows
+. . exported "AUDSYS"."AUD$UNIFIED":"SYS_P221"           102.5 KB      96 rows
+. . exported "AUDSYS"."AUD$UNIFIED":"SYS_P248"           195.3 KB     193 rows
+. . exported "LBACSYS"."OLS$AUDIT"                           0 KB       0 rows
+. . exported "LBACSYS"."OLS$COMPARTMENTS"                    0 KB       0 rows
+. . exported "LBACSYS"."OLS$DIP_DEBUG"                       0 KB       0 rows
+. . exported "LBACSYS"."OLS$GROUPS"                          0 KB       0 rows
+. . exported "LBACSYS"."OLS$LAB"                             0 KB       0 rows
+. . exported "LBACSYS"."OLS$LEVELS"                          0 KB       0 rows
+. . exported "LBACSYS"."OLS$POL"                             0 KB       0 rows
+. . exported "LBACSYS"."OLS$POLICY_ADMIN"                    0 KB       0 rows
+. . exported "LBACSYS"."OLS$POLS"                            0 KB       0 rows
+. . exported "LBACSYS"."OLS$POLT"                            0 KB       0 rows
+. . exported "LBACSYS"."OLS$PROFILE"                         0 KB       0 rows
+. . exported "LBACSYS"."OLS$PROFILES"                        0 KB       0 rows
+. . exported "LBACSYS"."OLS$PROG"                            0 KB       0 rows
+. . exported "LBACSYS"."OLS$SESSINFO"                        0 KB       0 rows
+. . exported "LBACSYS"."OLS$USER"                            0 KB       0 rows
+. . exported "LBACSYS"."OLS$USER_COMPARTMENTS"               0 KB       0 rows
+. . exported "LBACSYS"."OLS$USER_GROUPS"                     0 KB       0 rows
+. . exported "LBACSYS"."OLS$USER_LEVELS"                     0 KB       0 rows
+. . exported "SYS"."AUD$"                                    0 KB       0 rows
+. . exported "SYS"."DAM_CLEANUP_EVENTS$"                     0 KB       0 rows
+. . exported "SYS"."DAM_CLEANUP_JOBS$"                       0 KB       0 rows
+. . exported "SYS"."TSDP_ASSOCIATION$"                       0 KB       0 rows
+. . exported "SYS"."TSDP_CONDITION$"                         0 KB       0 rows
+. . exported "SYS"."TSDP_FEATURE_POLICY$"                    0 KB       0 rows
+. . exported "SYS"."TSDP_PROTECTION$"                        0 KB       0 rows
+. . exported "SYS"."TSDP_SENSITIVE_DATA$"                    0 KB       0 rows
+. . exported "SYS"."TSDP_SENSITIVE_TYPE$"                    0 KB       0 rows
+. . exported "SYS"."TSDP_SOURCE$"                            0 KB       0 rows
+. . exported "SYSTEM"."REDO_LOG"                             0 KB       0 rows
+. . exported "WMSYS"."WM$BATCH_COMPRESSIBLE_TABLES$"         0 KB       0 rows
+. . exported "WMSYS"."WM$CONSTRAINTS_TABLE$"                 0 KB       0 rows
+. . exported "WMSYS"."WM$CONS_COLUMNS$"                      0 KB       0 rows
+. . exported "WMSYS"."WM$LOCKROWS_INFO$"                     0 KB       0 rows
+. . exported "WMSYS"."WM$MODIFIED_TABLES$"                   0 KB       0 rows
+. . exported "WMSYS"."WM$MP_GRAPH_WORKSPACES_TABLE$"         0 KB       0 rows
+. . exported "WMSYS"."WM$MP_PARENT_WORKSPACES_TABLE$"        0 KB       0 rows
+. . exported "WMSYS"."WM$NESTED_COLUMNS_TABLE$"              0 KB       0 rows
+. . exported "WMSYS"."WM$RESOLVE_WORKSPACES_TABLE$"          0 KB       0 rows
+. . exported "WMSYS"."WM$RIC_LOCKING_TABLE$"                 0 KB       0 rows
+. . exported "WMSYS"."WM$RIC_TABLE$"                         0 KB       0 rows
+. . exported "WMSYS"."WM$RIC_TRIGGERS_TABLE$"                0 KB       0 rows
+. . exported "WMSYS"."WM$UDTRIG_DISPATCH_PROCS$"             0 KB       0 rows
+. . exported "WMSYS"."WM$UDTRIG_INFO$"                       0 KB       0 rows
+. . exported "WMSYS"."WM$VERSION_TABLE$"                     0 KB       0 rows
+. . exported "WMSYS"."WM$VT_ERRORS_TABLE$"                   0 KB       0 rows
+. . exported "WMSYS"."WM$WORKSPACE_SAVEPOINTS_TABLE$"        0 KB       0 rows
+. . exported "MDSYS"."RDF_PARAM$"                        6.515 KB       3 rows
+. . exported "SYS"."AUDTAB$TBS$FOR_EXPORT"               5.953 KB       2 rows
+. . exported "SYS"."DBA_SENSITIVE_DATA"                      0 KB       0 rows
+. . exported "SYS"."DBA_TSDP_POLICY_PROTECTION"              0 KB       0 rows
+. . exported "SYS"."FGA_LOG$FOR_EXPORT"                      0 KB       0 rows
+. . exported "SYS"."NACL$_ACE_EXP"                           0 KB       0 rows
+. . exported "SYS"."NACL$_HOST_EXP"                      6.914 KB       1 rows
+. . exported "SYS"."NACL$_WALLET_EXP"                        0 KB       0 rows
+. . exported "SYS"."SQL$TEXT_DATAPUMP"                       0 KB       0 rows
+. . exported "SYS"."SQL$_DATAPUMP"                           0 KB       0 rows
+. . exported "SYS"."SQLOBJ$AUXDATA_DATAPUMP"                 0 KB       0 rows
+. . exported "SYS"."SQLOBJ$DATA_DATAPUMP"                    0 KB       0 rows
+. . exported "SYS"."SQLOBJ$PLAN_DATAPUMP"                    0 KB       0 rows
+. . exported "SYS"."SQLOBJ$_DATAPUMP"                        0 KB       0 rows
+. . exported "SYSTEM"."SCHEDULER_JOB_ARGS"                   0 KB       0 rows
+. . exported "SYSTEM"."SCHEDULER_PROGRAM_ARGS"               0 KB       0 rows
+. . exported "WMSYS"."WM$EXP_MAP"                        7.718 KB       3 rows
+. . exported "WMSYS"."WM$METADATA_MAP"                       0 KB       0 rows
+Master table "SYSTEM"."SYS_EXPORT_FULL_01" successfully loaded/unloaded
+******************************************************************************
+Dump file set for SYSTEM.SYS_EXPORT_FULL_01 is:
+  /tmp/orcl.dmp
+******************************************************************************
+Datafiles required for transportable tablespace USERS:
+  /u01/app/oracle/oradata/ORCLCDB/orcl/user01.dbf
+Job "SYSTEM"."SYS_EXPORT_FULL_01" successfully completed at Thu Apr 6 10:33:22 2023 elapsed 0 00:05:36
+
+You have new mail in /var/spool/mail/oracle
+-- Tao thu muc chua pluggable database target
+[oracle@node01 schema]$ mkdir -p /u01/app/oracle/oradata/ORCLCDB/target
+-- Copy datafile sang
+[oracle@node01 schema]$ cp /u01/app/oracle/oradata/ORCLCDB/orcl/user01.dbf /u01/app/oracle/oradata/ORCLCDB/target
+-- Dua tablespace users ve trang thai read write
+[oracle@node01 schema]$ sqlplus sys/oracle@localhost:1721/orcl as sysdba
+
+SQL*Plus: Release 19.0.0.0.0 - Production on Thu Apr 6 10:38:00 2023
+Version 19.3.0.0.0
+
+Copyright (c) 1982, 2019, Oracle.  All rights reserved.
+
+
+Connected to:
+Oracle Database 19c Enterprise Edition Release 19.0.0.0.0 - Production
+Version 19.3.0.0.0
+
+SQL> alter tablespace users read write;
+
+Tablespace altered.
+-- Tao pdb target
+SQL> conn / as sysdba
+Connected.
+SQL> CREATE PLUGGABLE DATABASE target
+ADMIN USER ADMIN IDENTIFIED BY oracle
+ROLES=(DBA)
+FILE_NAME_CONVERT = ('/u01/app/oracle/oradata/ORCLCDB/pdbseed/',
+                     '/u01/app/oracle/oradata/ORCLCDB/target/');  2    3    4    5
+
+Pluggable database created.
+
+SQL> show pdbs
+
+    CON_ID CON_NAME                       OPEN MODE  RESTRICTED
+---------- ------------------------------ ---------- ----------
+         2 PDB$SEED                       READ ONLY  NO
+         3 ORCL                           READ WRITE NO
+         4 TARGET                         MOUNTED
+SQL> alter pluggable database target open;
+
+Pluggable database altered.
+-- Tao directory tmp_dir trong pdb target
+SQL> alter session set container=target;
+
+Session altered.
+
+SQL> create directory tmp_dir as '/tmp';
+
+Directory created.
+-- Tien hanh import
+SQL> conn / as sysdba
+Connected.
+SQL> grant create pluggable database to system container=all;
+SQL> grant exp_full_database,imp_full_database to system container=all;
+SQL> grant DATAPUMP_EXP_FULL_DATABASE,DATAPUMP_IMP_FULL_DATABASE to system container=all;
+--
+[oracle@node01 schema]$ impdp system/oracle@localhost:1721/target directory=tmp_dir dumpfile=orcl.dmp full=yes TRANSPORT_DATAFILES=/u01/app/oracle/oradata/ORCLCDB/target/user01.dbf
+
+Import: Release 19.0.0.0.0 - Production on Thu Apr 6 10:44:12 2023
+Version 19.3.0.0.0
+
+Copyright (c) 1982, 2019, Oracle and/or its affiliates.  All rights reserved.
+
+Connected to: Oracle Database 19c Enterprise Edition Release 19.0.0.0.0 - Production
+Master table "SYSTEM"."SYS_IMPORT_FULL_01" successfully loaded/unloaded
+Starting "SYSTEM"."SYS_IMPORT_FULL_01":  system/********@localhost:1721/target directory=tmp_dir dumpfile=orcl.dmp full=yes TRANSPORT_DATAFILES=/u01/app/oracle/oradata/ORCLCDB/target/user01.dbf
+Processing object type DATABASE_EXPORT/PRE_SYSTEM_IMPCALLOUT/MARKER
+Processing object type DATABASE_EXPORT/PRE_INSTANCE_IMPCALLOUT/MARKER
+Processing object type DATABASE_EXPORT/PLUGTS_FULL/PLUGTS_BLK
+Processing object type DATABASE_EXPORT/TABLESPACE
+ORA-31684: Object type TABLESPACE:"UNDOTBS1" already exists
+
+ORA-31684: Object type TABLESPACE:"TEMP" already exists
+
+Processing object type DATABASE_EXPORT/PROFILE
+Processing object type DATABASE_EXPORT/SCHEMA/USER
+ORA-31684: Object type USER:"ADMIN" already exists
+
+Processing object type DATABASE_EXPORT/RADM_FPTM
+Processing object type DATABASE_EXPORT/GRANT/SYSTEM_GRANT/PROC_SYSTEM_GRANT
+Processing object type DATABASE_EXPORT/SCHEMA/GRANT/SYSTEM_GRANT
+Processing object type DATABASE_EXPORT/SCHEMA/ROLE_GRANT
+Processing object type DATABASE_EXPORT/SCHEMA/DEFAULT_ROLE
+Processing object type DATABASE_EXPORT/SCHEMA/ON_USER_GRANT
+Processing object type DATABASE_EXPORT/SCHEMA/TABLESPACE_QUOTA
+Processing object type DATABASE_EXPORT/RESOURCE_COST
+Processing object type DATABASE_EXPORT/TRUSTED_DB_LINK
+Processing object type DATABASE_EXPORT/SCHEMA/SEQUENCE/SEQUENCE
+Processing object type DATABASE_EXPORT/DIRECTORY/DIRECTORY
+ORA-31684: Object type DIRECTORY:"TMP_DIR" already exists
+
+Processing object type DATABASE_EXPORT/DIRECTORY/GRANT/OWNER_GRANT/OBJECT_GRANT
+Processing object type DATABASE_EXPORT/SCHEMA/SYNONYM
+Processing object type DATABASE_EXPORT/SCHEMA/TYPE/INC_TYPE
+Processing object type DATABASE_EXPORT/SCHEMA/TYPE/TYPE_SPEC
+Processing object type DATABASE_EXPORT/SCHEMA/TYPE/GRANT/OWNER_GRANT/OBJECT_GRANT
+Processing object type DATABASE_EXPORT/SYSTEM_PROCOBJACT/PRE_SYSTEM_ACTIONS/PROCACT_SYSTEM
+Processing object type DATABASE_EXPORT/SYSTEM_PROCOBJACT/PROCOBJ
+Processing object type DATABASE_EXPORT/SYSTEM_PROCOBJACT/POST_SYSTEM_ACTIONS/PROCACT_SYSTEM
+Processing object type DATABASE_EXPORT/SCHEMA/PROCACT_SCHEMA
+Processing object type DATABASE_EXPORT/EARLY_OPTIONS/VIEWS_AS_TABLES/TABLE
+Processing object type DATABASE_EXPORT/EARLY_OPTIONS/VIEWS_AS_TABLES/TABLE_DATA
+. . imported "SYS"."KU$_EXPORT_USER_MAP"                 6.156 KB      45 rows
+Processing object type DATABASE_EXPORT/EARLY_POST_INSTANCE_IMPCALLOUT/MARKER
+Processing object type DATABASE_EXPORT/SCHEMA/XMLSCHEMA/XMLSCHEMA
+Processing object type DATABASE_EXPORT/NORMAL_OPTIONS/TABLE
+Processing object type DATABASE_EXPORT/NORMAL_OPTIONS/TABLE_DATA
+. . imported "SYSTEM"."REDO_DB_TMP"                      25.59 KB       1 rows
+. . imported "WMSYS"."E$WORKSPACES_TABLE$"               12.10 KB       1 rows
+. . imported "WMSYS"."E$HINT_TABLE$"                     9.984 KB      97 rows
+. . imported "WMSYS"."E$WORKSPACE_PRIV_TABLE$"           7.078 KB      11 rows
+. . imported "SYS"."AMGT$DP$DAM_CONFIG_PARAM$"           6.531 KB      14 rows
+. . imported "SYS"."DP$TSDP_SUBPOL$"                     6.328 KB       1 rows
+. . imported "WMSYS"."E$NEXTVER_TABLE$"                  6.375 KB       1 rows
+. . imported "WMSYS"."E$ENV_VARS$"                       6.015 KB       3 rows
+. . imported "SYS"."DP$TSDP_PARAMETER$"                  5.953 KB       1 rows
+. . imported "SYS"."DP$TSDP_POLICY$"                     5.921 KB       1 rows
+. . imported "WMSYS"."E$VERSION_HIERARCHY_TABLE$"        5.984 KB       1 rows
+. . imported "WMSYS"."E$EVENTS_INFO$"                    5.812 KB      12 rows
+. . imported "AUDSYS"."AMGT$DP$AUD$UNIFIED":"AUD_UNIFIED_P0"      0 KB       0 rows
+. . imported "AUDSYS"."AMGT$DP$AUD$UNIFIED":"SYS_P221"   102.5 KB      96 rows
+. . imported "AUDSYS"."AMGT$DP$AUD$UNIFIED":"SYS_P248"   195.3 KB     193 rows
+. . imported "LBACSYS"."OLS_DP$OLS$AUDIT"                    0 KB       0 rows
+. . imported "LBACSYS"."OLS_DP$OLS$COMPARTMENTS"             0 KB       0 rows
+. . imported "LBACSYS"."OLS_DP$OLS$GROUPS"                   0 KB       0 rows
+. . imported "LBACSYS"."OLS_DP$OLS$LAB"                      0 KB       0 rows
+. . imported "LBACSYS"."OLS_DP$OLS$LEVELS"                   0 KB       0 rows
+. . imported "LBACSYS"."OLS_DP$OLS$POL"                      0 KB       0 rows
+. . imported "LBACSYS"."OLS_DP$OLS$POLS"                     0 KB       0 rows
+. . imported "LBACSYS"."OLS_DP$OLS$POLT"                     0 KB       0 rows
+. . imported "LBACSYS"."OLS_DP$OLS$PROFILE"                  0 KB       0 rows
+. . imported "LBACSYS"."OLS_DP$OLS$PROG"                     0 KB       0 rows
+. . imported "LBACSYS"."OLS_DP$OLS$USER"                     0 KB       0 rows
+. . imported "SYS"."AMGT$DP$AUD$"                            0 KB       0 rows
+. . imported "SYS"."AMGT$DP$DAM_CLEANUP_EVENTS$"             0 KB       0 rows
+. . imported "SYS"."AMGT$DP$DAM_CLEANUP_JOBS$"               0 KB       0 rows
+. . imported "SYS"."DP$TSDP_ASSOCIATION$"                    0 KB       0 rows
+. . imported "SYS"."DP$TSDP_CONDITION$"                      0 KB       0 rows
+. . imported "SYS"."DP$TSDP_FEATURE_POLICY$"                 0 KB       0 rows
+. . imported "SYS"."DP$TSDP_PROTECTION$"                     0 KB       0 rows
+. . imported "SYS"."DP$TSDP_SENSITIVE_DATA$"                 0 KB       0 rows
+. . imported "SYS"."DP$TSDP_SENSITIVE_TYPE$"                 0 KB       0 rows
+. . imported "SYS"."DP$TSDP_SOURCE$"                         0 KB       0 rows
+. . imported "SYSTEM"."REDO_LOG_TMP"                         0 KB       0 rows
+. . imported "WMSYS"."E$BATCH_COMPRESSIBLE_TABLES$"          0 KB       0 rows
+. . imported "WMSYS"."E$CONSTRAINTS_TABLE$"                  0 KB       0 rows
+. . imported "WMSYS"."E$CONS_COLUMNS$"                       0 KB       0 rows
+. . imported "WMSYS"."E$LOCKROWS_INFO$"                      0 KB       0 rows
+. . imported "WMSYS"."E$MODIFIED_TABLES$"                    0 KB       0 rows
+. . imported "WMSYS"."E$MP_GRAPH_WORKSPACES_TABLE$"          0 KB       0 rows
+. . imported "WMSYS"."E$MP_PARENT_WORKSPACES_TABLE$"         0 KB       0 rows
+. . imported "WMSYS"."E$NESTED_COLUMNS_TABLE$"               0 KB       0 rows
+. . imported "WMSYS"."E$RESOLVE_WORKSPACES_TABLE$"           0 KB       0 rows
+. . imported "WMSYS"."E$RIC_LOCKING_TABLE$"                  0 KB       0 rows
+. . imported "WMSYS"."E$RIC_TABLE$"                          0 KB       0 rows
+. . imported "WMSYS"."E$RIC_TRIGGERS_TABLE$"                 0 KB       0 rows
+. . imported "WMSYS"."E$UDTRIG_DISPATCH_PROCS$"              0 KB       0 rows
+. . imported "WMSYS"."E$UDTRIG_INFO$"                        0 KB       0 rows
+. . imported "WMSYS"."E$VERSION_TABLE$"                      0 KB       0 rows
+. . imported "WMSYS"."E$VT_ERRORS_TABLE$"                    0 KB       0 rows
+. . imported "WMSYS"."E$WORKSPACE_SAVEPOINTS_TABLE$"         0 KB       0 rows
+Processing object type DATABASE_EXPORT/NORMAL_OPTIONS/VIEWS_AS_TABLES/TABLE
+Processing object type DATABASE_EXPORT/NORMAL_OPTIONS/VIEWS_AS_TABLES/TABLE_DATA
+. . imported "MDSYS"."RDF_PARAM$TBL"                     6.515 KB       3 rows
+. . imported "SYS"."AMGT$DP$AUDTAB$TBS$FOR_EXPORT"       5.953 KB       2 rows
+. . imported "SYS"."DP$DBA_SENSITIVE_DATA"                   0 KB       0 rows
+. . imported "SYS"."DP$DBA_TSDP_POLICY_PROTECTION"           0 KB       0 rows
+. . imported "SYS"."AMGT$DP$FGA_LOG$FOR_EXPORT"              0 KB       0 rows
+. . imported "SYS"."NACL$_ACE_IMP"                           0 KB       0 rows
+. . imported "SYS"."NACL$_HOST_IMP"                      6.914 KB       1 rows
+. . imported "SYS"."NACL$_WALLET_IMP"                        0 KB       0 rows
+. . imported "SYS"."DATAPUMP$SQL$TEXT"                       0 KB       0 rows
+. . imported "SYS"."DATAPUMP$SQL$"                           0 KB       0 rows
+. . imported "SYS"."DATAPUMP$SQLOBJ$AUXDATA"                 0 KB       0 rows
+. . imported "SYS"."DATAPUMP$SQLOBJ$DATA"                    0 KB       0 rows
+. . imported "SYS"."DATAPUMP$SQLOBJ$PLAN"                    0 KB       0 rows
+. . imported "SYS"."DATAPUMP$SQLOBJ$"                        0 KB       0 rows
+. . imported "SYSTEM"."SCHEDULER_JOB_ARGS_TMP"               0 KB       0 rows
+. . imported "SYSTEM"."SCHEDULER_PROGRAM_ARGS_TMP"           0 KB       0 rows
+. . imported "WMSYS"."E$EXP_MAP"                         7.718 KB       3 rows
+. . imported "WMSYS"."E$METADATA_MAP"                        0 KB       0 rows
+Processing object type DATABASE_EXPORT/NORMAL_POST_INSTANCE_IMPCALLOUT/MARKER
+Processing object type DATABASE_EXPORT/SCHEMA/TABLE/TABLE
+ORA-39083: Object type TABLE:"OE"."CATEGORIES_TAB" failed to create with error:
+ORA-39218: type check on object type "OE"."CATALOG_TYP" failed
+ORA-39216: object type "OE"."CATALOG_TYP" hashcode or version number mismatch
+
+Failing sql is:
+BEGIN SYS.DBMS_METADATA.CHECK_TYPE('OE','CATALOG_TYP','2','6196C2EFEF5A427C05F09576E8DEB7C027','04'); SYS.DBMS_METADATA.CHECK_TYPE('OE','CATEGORY_TYP','2','61F672A6337BC51415DECB8A48C66C7380','01'); SYS.DBMS_METADATA.CHECK_TYPE('OE','COMPOSITE_CATEGORY_TYP','2','615CA00ABACF32FD30E651AA458F18911C','03'); SYS.DBMS_METADATA.CHECK_TYPE('OE','LEAF_CATEGORY_TYP','2','618C94CA61A86B40CB3118054C9069C06C','02'); END;
+
+ORA-39151: Table "OE"."PURCHASEORDER" exists. All dependent metadata and data will be skipped due to table_exists_action of skip
+
+Processing object type DATABASE_EXPORT/SCHEMA/TABLE/GRANT/OWNER_GRANT/OBJECT_GRANT
+Processing object type DATABASE_EXPORT/SCHEMA/TABLE/COMMENT
+Processing object type DATABASE_EXPORT/SCHEMA/FUNCTION/FUNCTION
+Processing object type DATABASE_EXPORT/SCHEMA/PROCEDURE/PROCEDURE
+Processing object type DATABASE_EXPORT/SCHEMA/FUNCTION/ALTER_FUNCTION
+Processing object type DATABASE_EXPORT/SCHEMA/PROCEDURE/ALTER_PROCEDURE
+Processing object type DATABASE_EXPORT/SCHEMA/VIEW/VIEW
+Processing object type DATABASE_EXPORT/SCHEMA/VIEW/GRANT/OWNER_GRANT/OBJECT_GRANT
+Processing object type DATABASE_EXPORT/SCHEMA/VIEW/COMMENT
+Processing object type DATABASE_EXPORT/SCHEMA/TYPE/TYPE_BODY
+Processing object type DATABASE_EXPORT/SCHEMA/TABLE/INDEX/INDEX
+ORA-39112: Dependent object type INDEX:"OE"."SYS_FK0000073187N00009$" skipped, base object type TABLE:"OE"."CATEGORIES_TAB" creation failed
+
+ORA-39112: Dependent object type INDEX:"OE"."SYS_FK0000073187N00007$" skipped, base object type TABLE:"OE"."CATEGORIES_TAB" creation failed
+
+Processing object type DATABASE_EXPORT/SCHEMA/TABLE/INDEX/FUNCTIONAL_INDEX/INDEX
+Processing object type DATABASE_EXPORT/SCHEMA/TABLE/CONSTRAINT/CONSTRAINT
+ORA-39112: Dependent object type CONSTRAINT:"OE"."SYS_C007617" skipped, base object type TABLE:"OE"."CATEGORIES_TAB" creation failed
+
+Processing object type DATABASE_EXPORT/SCHEMA/TABLE/INDEX/STATISTICS/INDEX_STATISTICS
+Processing object type DATABASE_EXPORT/SCHEMA/TABLE/INDEX/STATISTICS/FUNCTIONAL_INDEX/INDEX_STATISTICS
+Processing object type DATABASE_EXPORT/SCHEMA/TABLE/CONSTRAINT/REF_CONSTRAINT
+Processing object type DATABASE_EXPORT/SCHEMA/TABLE/INDEX/BITMAP_INDEX/INDEX
+Processing object type DATABASE_EXPORT/SCHEMA/TABLE/INDEX/STATISTICS/BITMAP_INDEX/INDEX_STATISTICS
+Processing object type DATABASE_EXPORT/SCHEMA/TABLE/STATISTICS/TABLE_STATISTICS
+Processing object type DATABASE_EXPORT/STATISTICS/MARKER
+OE.LINEITEM_TABLE_MEMBERS : sqlerrm = ORA-20000: Unable to set values for index LINEITEM_TABLE_MEMBERS: does not exist or insufficient privileges
+OE.SYS_C007613 : sqlerrm = ORA-20000: Unable to set values for index SYS_C007613: does not exist or insufficient privileges
+OE.SYS_C007612 : sqlerrm = ORA-20000: Unable to set values for index SYS_C007612: does not exist or insufficient privileges
+OE.ACTION_TABLE_MEMBERS : sqlerrm = ORA-20000: Unable to set values for index ACTION_TABLE_MEMBERS: does not exist or insufficient privileges
+Importing statistics failed for 4 object(s);
+Processing object type DATABASE_EXPORT/SCHEMA/TABLE/INDEX/DOMAIN_INDEX/SECONDARY_TABLE/TABLE
+Processing object type DATABASE_EXPORT/SCHEMA/TABLE/INDEX/DOMAIN_INDEX/SECONDARY_TABLE/INDEX/INDEX
+Processing object type DATABASE_EXPORT/SCHEMA/TABLE/INDEX/DOMAIN_INDEX/SECONDARY_TABLE/CONSTRAINT
+Processing object type DATABASE_EXPORT/SCHEMA/TABLE/INDEX/DOMAIN_INDEX/INDEX
+Processing object type DATABASE_EXPORT/SCHEMA/TABLE/TRIGGER
+Processing object type DATABASE_EXPORT/SCHEMA/VIEW/TRIGGER
+Processing object type DATABASE_EXPORT/SCHEMA/MATERIALIZED_VIEW
+Processing object type DATABASE_EXPORT/SCHEMA/DIMENSION
+Processing object type DATABASE_EXPORT/END_PLUGTS_BLK
+Processing object type DATABASE_EXPORT/FINAL_POST_INSTANCE_IMPCALLOUT/MARKER
+Processing object type DATABASE_EXPORT/SCHEMA/TABLE/POST_INSTANCE/PROCACT_INSTANCE
+Processing object type DATABASE_EXPORT/SCHEMA/TABLE/POST_INSTANCE/PROCDEPOBJ
+Processing object type DATABASE_EXPORT/SCHEMA/POST_SCHEMA/PROCOBJ
+Processing object type DATABASE_EXPORT/SCHEMA/POST_SCHEMA/PROCACT_SCHEMA
+Processing object type DATABASE_EXPORT/AUDIT_UNIFIED/AUDIT_POLICY_ENABLE
+Processing object type DATABASE_EXPORT/POST_SYSTEM_IMPCALLOUT/MARKER
+Job "SYSTEM"."SYS_IMPORT_FULL_01" completed with 14 error(s) at Thu Apr 6 10:47:04 2023 elapsed 0 00:02:51
+
+[oracle@node01 schema]$ sqlplus hr/hr@localhost:1721/target
+
+SQL*Plus: Release 19.0.0.0.0 - Production on Thu Apr 6 10:47:37 2023
+Version 19.3.0.0.0
+
+Copyright (c) 1982, 2019, Oracle.  All rights reserved.
+
+
+Connected to:
+Oracle Database 19c Enterprise Edition Release 19.0.0.0.0 - Production
+Version 19.3.0.0.0
+
+SQL> select * from regions;
+
+ REGION_ID REGION_NAME
+---------- -------------------------
+         1 Europe
+         2 Americas
+         3 Asia
+         4 Middle East and Africa
+
+
+
+

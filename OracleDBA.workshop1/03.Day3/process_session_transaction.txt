@@ -1,0 +1,15 @@
+Be careful with increasing the number of processes, since it is related with sessions and transactions.
+
+"SESSIONS parameter is the maximum number of sessions that can be created in the system. Every login requires a session.
+
+It is calculated from PROCESSES parameter:
+
+10g -> ((1.1 * PROCESSES) + 5)
+11g-> ((1.5 * PROCESSES) + 22)
+
+12.2-> ((1.5 * PROCESSES) + 22)
+
+You may leave SESSIONS and let Database choose its value automatically."
+
+TRANSACTIONS = (1.1 * SESSIONS)
+

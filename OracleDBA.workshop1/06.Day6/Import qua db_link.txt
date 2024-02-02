@@ -1,0 +1,61 @@
+[oracle@node01 ~]$ . oraenv
+ORACLE_SID = [orcl] ? orclcdb
+The Oracle base remains unchanged with value /u01/app/oracle
+[oracle@node01 ~]$ sqlplus system/oracle@localhost:1721/pdb2
+
+SQL*Plus: Release 19.0.0.0.0 - Production on Thu Apr 6 19:57:21 2023
+Version 19.3.0.0.0
+
+Copyright (c) 1982, 2019, Oracle.  All rights reserved.
+
+Last Successful login time: Thu Apr 06 2023 19:35:37 +07:00
+
+Connected to:
+Oracle Database 19c Enterprise Edition Release 19.0.0.0.0 - Production
+Version 19.3.0.0.0
+
+SQL> create database link db_orcl connect to system identified by oracle using '192.168.56.131:1721/orcl';
+
+Database link created.
+
+SQL> select * from dual@db_orcl;
+
+D
+-
+X
+
+SQL> select * from hr.regions@db_orcl;
+
+ REGION_ID REGION_NAME
+---------- -------------------------
+	 1 Europe
+	 2 Americas
+	 3 Asia
+	 4 Middle East and Africa
+
+SQL> show con_name
+
+CON_NAME
+------------------------------
+PDB2
+SQL> create user testdb identified by oracle;
+
+User created.
+
+SQL> grant connect,resource to testdb;
+
+Grant succeeded.
+
+SQL> create directory tmp_dir as '/tmp';
+
+Directory created.
+
+SQL> grant read,write on directory tmp_dir to public;
+
+Grant succeeded.
+
+SQL> exit
+Disconnected from Oracle Database 19c Enterprise Edition Release 19.0.0.0.0 - Production
+Version 19.3.0.0.0
+[oracle@node01 ~]$ impdp system/oracle@localhost:1721/PDB2 directory=tmp_dir NETWORK_LINK=db_orcl schemas=HR remap_schema=HR:testdb
+

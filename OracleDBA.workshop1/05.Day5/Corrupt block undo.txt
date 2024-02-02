@@ -1,0 +1,257 @@
+[oracle@localhost ~]$ sqlplus / as sysdba
+
+SQL*Plus: Release 19.0.0.0.0 - Production on Fri Aug 27 08:36:24 2021
+Version 19.3.0.0.0
+
+Copyright (c) 1982, 2019, Oracle.  All rights reserved.
+
+Connected to an idle instance.
+
+SQL> startup
+ORACLE instance started.
+
+Total System Global Area  629144664 bytes
+Fixed Size		    8899672 bytes
+Variable Size		  566231040 bytes
+Database Buffers	   50331648 bytes
+Redo Buffers		    3682304 bytes
+Database mounted.
+Database opened.
+SQL> select SEGMENT_NAME, TABLESPACE_NAME, STATUS from DBA_ROLLBACK_SEGS;
+
+SEGMENT_NAME		       TABLESPACE_NAME		      STATUS
+------------------------------ ------------------------------ ----------------
+SYSTEM			       SYSTEM			      ONLINE
+_SYSSMU1_1261223759$	       UNDOTBS1 		      ONLINE
+_SYSSMU2_27624015$	       UNDOTBS1 		      ONLINE
+_SYSSMU3_2421748942$	       UNDOTBS1 		      ONLINE
+_SYSSMU4_625702278$	       UNDOTBS1 		      ONLINE
+_SYSSMU5_2101348960$	       UNDOTBS1 		      ONLINE
+_SYSSMU6_813816332$	       UNDOTBS1 		      ONLINE
+_SYSSMU7_2329891355$	       UNDOTBS1 		      ONLINE
+_SYSSMU8_399776867$	       UNDOTBS1 		      ONLINE
+_SYSSMU9_1692468413$	       UNDOTBS1 		      ONLINE
+_SYSSMU10_930580995$	       UNDOTBS1 		      ONLINE
+
+SEGMENT_NAME		       TABLESPACE_NAME		      STATUS
+------------------------------ ------------------------------ ----------------
+_SYSSMU11_3361652437$	       UNDOTBS1 		      ONLINE
+_SYSSMU12_437829750$	       UNDOTBS1 		      ONLINE
+_SYSSMU13_3978011732$	       UNDOTBS1 		      ONLINE
+
+14 rows selected.
+
+SQL> select file_id,block_id,blocks from dba_extents where segment_name='_SYSSMU1_1261223759$';
+
+   FILE_ID   BLOCK_ID	  BLOCKS
+---------- ---------- ----------
+	 4	  128	       8
+	 4	  136	       8
+	 4	 1280	     128
+	 4	51712	     128
+	 4	52992	     128
+-- Gia lap hu file
+SQL> select name from v$datafile where file#=4;
+
+NAME
+--------------------------------------------------------------------------------
+/u01/app/oracle/oradata/ORCL19C/undotbs01.dbf
+-- 
+SQL> ! vi corrupt.sh
+#!/bin/bash
+FILE=${1:?'Parameter 1 should be set to file name'}
+BLOCK=${2:?'Parameter 2 should be set to the block to be corrupted'}
+BLOCKSIZE=${3:?'Parameter 3 should be set to the database block size'}
+
+dd of=$FILE bs=$BLOCKSIZE conv=notrunc seek=$BLOCK <<EOF
+CORRUPT
+EOF
+dd of=$FILE bs=$BLOCKSIZE conv=notrunc seek=`expr 1 + $BLOCK` <<EOF
+CORRUPT
+EOF
+dd of=$FILE bs=$BLOCKSIZE conv=notrunc seek=`expr 2 + $BLOCK` <<EOF
+CORRUPT
+EOF
+dd of=$FILE bs=$BLOCKSIZE conv=notrunc seek=`expr 3 + $BLOCK` <<EOF
+CORRUPT
+EOF
+--
+SQL> ! chmod 775 corrupt.sh
+SQL> ! sh corrupt.sh /u01/app/oracle/oradata/ORCL19C/undotbs01.dbf 51712 8192
+0+1 records in
+0+1 records out
+8 bytes (8 B) copied, 5.2856e-05 s, 151 kB/s
+0+1 records in
+0+1 records out
+8 bytes (8 B) copied, 3.8794e-05 s, 206 kB/s
+0+1 records in
+0+1 records out
+8 bytes (8 B) copied, 3.8388e-05 s, 208 kB/s
+0+1 records in
+0+1 records out
+8 bytes (8 B) copied, 4.0224e-05 s, 199 kB/s
+-- Dung dbverify kiem tra
+SQL> ! dbv file=/u01/app/oracle/oradata/ORCL19C/undotbs01.dbf
+
+DBVERIFY: Release 19.0.0.0.0 - Production on Fri Aug 27 08:45:02 2021
+
+Copyright (c) 1982, 2019, Oracle and/or its affiliates.  All rights reserved.
+
+DBVERIFY - Verification starting : FILE = /u01/app/oracle/oradata/ORCL19C/undotbs01.dbf
+Page 51712 is marked corrupt
+Corrupt block relative dba: 0x0100ca00 (file 4, block 51712)
+Bad header found during dbv: 
+Data in bad block:
+ type: 67 format: 7 rdba: 0x0a545055
+ last change scn: 0x5252.0000.007fa591 seq: 0x40 flg: 0x04
+ spare3: 0x0
+ consistency value in tail: 0xa5910240
+ check value in block header: 0xd104
+ computed block checksum: 0x2e12
+
+Page 51713 is marked corrupt
+Corrupt block relative dba: 0x0100ca01 (file 4, block 51713)
+Bad header found during dbv: 
+Data in bad block:
+ type: 67 format: 7 rdba: 0x0a545055
+ last change scn: 0x5252.0000.007fa591 seq: 0x3f flg: 0x04
+ spare3: 0x0
+ consistency value in tail: 0xa591023f
+ check value in block header: 0xb0e1
+ computed block checksum: 0x2e13
+
+Page 51714 is marked corrupt
+Corrupt block relative dba: 0x0100ca02 (file 4, block 51714)
+Bad header found during dbv: 
+Data in bad block:
+ type: 67 format: 7 rdba: 0x0a545055
+ last change scn: 0x5252.0000.007fa591 seq: 0x3f flg: 0x04
+ spare3: 0x0
+ consistency value in tail: 0xa591023f
+ check value in block header: 0x516d
+ computed block checksum: 0x2e10
+
+Page 51715 is marked corrupt
+Corrupt block relative dba: 0x0100ca03 (file 4, block 51715)
+Bad header found during dbv: 
+Data in bad block:
+ type: 67 format: 7 rdba: 0x0a545055
+ last change scn: 0x5252.0000.007fa591 seq: 0x3f flg: 0x04
+ spare3: 0x0
+ consistency value in tail: 0xa591023f
+ check value in block header: 0x79b6
+ computed block checksum: 0x2e11
+
+
+
+DBVERIFY - Verification complete
+
+Total Pages Examined         : 92800
+Total Pages Processed (Data) : 0
+Total Pages Failing   (Data) : 0
+Total Pages Processed (Index): 0
+Total Pages Failing   (Index): 0
+Total Pages Processed (Other): 92667
+Total Pages Processed (Seg)  : 13
+Total Pages Failing   (Seg)  : 0
+Total Pages Empty            : 129
+Total Pages Marked Corrupt   : 4
+Total Pages Influx           : 0
+Total Pages Encrypted        : 0
+Highest block SCN            : 8366053 (0.8366053)
+-- Tinh huong la khong co backup
+SQL> select
+   segment_name,
+   segment_type
+from
+   dba_extents
+where
+   file_id = 4
+and
+   51715 between block_id and block_id + blocks - 1;  2    3    4    5    6    7    8    9  
+
+SEGMENT_NAME
+--------------------------------------------------------------------------------
+SEGMENT_TYPE
+------------------
+_SYSSMU1_1261223759$
+TYPE2 UNDO
+-- 
+SQL> ALTER SYSTEM SET "_OFFLINE_ROLLBACK_SEGMENTS"='_SYSSMU1_1261223759$' scope=spfile; 
+SQL> shutdown immediate;
+Database closed.
+Database dismounted.
+ORACLE instance shut down.
+SQL> startup
+ORACLE instance started.
+
+Total System Global Area  629144664 bytes
+Fixed Size		    8899672 bytes
+Variable Size		  566231040 bytes
+Database Buffers	   50331648 bytes
+Redo Buffers		    3682304 bytes
+Database mounted.
+Database opened.
+SQL> select SEGMENT_NAME, TABLESPACE_NAME, STATUS from DBA_ROLLBACK_SEGS;
+
+SEGMENT_NAME		       TABLESPACE_NAME		      STATUS
+------------------------------ ------------------------------ ----------------
+SYSTEM			       SYSTEM			      ONLINE
+_SYSSMU1_1261223759$	       UNDOTBS1 		      OFFLINE
+_SYSSMU2_27624015$	       UNDOTBS1 		      ONLINE
+_SYSSMU3_2421748942$	       UNDOTBS1 		      ONLINE
+_SYSSMU4_625702278$	       UNDOTBS1 		      ONLINE
+_SYSSMU5_2101348960$	       UNDOTBS1 		      ONLINE
+_SYSSMU6_813816332$	       UNDOTBS1 		      ONLINE
+_SYSSMU7_2329891355$	       UNDOTBS1 		      ONLINE
+_SYSSMU8_399776867$	       UNDOTBS1 		      ONLINE
+_SYSSMU9_1692468413$	       UNDOTBS1 		      ONLINE
+_SYSSMU10_930580995$	       UNDOTBS1 		      ONLINE
+
+SEGMENT_NAME		       TABLESPACE_NAME		      STATUS
+------------------------------ ------------------------------ ----------------
+_SYSSMU11_3361652437$	       UNDOTBS1 		      ONLINE
+_SYSSMU12_437829750$	       UNDOTBS1 		      ONLINE
+_SYSSMU13_3978011732$	       UNDOTBS1 		      ONLINE
+
+14 rows selected.
+
+SQL> drop rollback segment "_SYSSMU1_1261223759$";
+
+Rollback segment dropped.
+SQL> select SEGMENT_NAME, TABLESPACE_NAME, STATUS from DBA_ROLLBACK_SEGS;
+
+SEGMENT_NAME		       TABLESPACE_NAME		      STATUS
+------------------------------ ------------------------------ ----------------
+SYSTEM			       SYSTEM			      ONLINE
+_SYSSMU2_27624015$	       UNDOTBS1 		      ONLINE
+_SYSSMU3_2421748942$	       UNDOTBS1 		      ONLINE
+_SYSSMU4_625702278$	       UNDOTBS1 		      ONLINE
+_SYSSMU5_2101348960$	       UNDOTBS1 		      ONLINE
+_SYSSMU6_813816332$	       UNDOTBS1 		      ONLINE
+_SYSSMU7_2329891355$	       UNDOTBS1 		      ONLINE
+_SYSSMU8_399776867$	       UNDOTBS1 		      ONLINE
+_SYSSMU9_1692468413$	       UNDOTBS1 		      ONLINE
+_SYSSMU10_930580995$	       UNDOTBS1 		      ONLINE
+_SYSSMU11_3361652437$	       UNDOTBS1 		      ONLINE
+
+SEGMENT_NAME		       TABLESPACE_NAME		      STATUS
+------------------------------ ------------------------------ ----------------
+_SYSSMU12_437829750$	       UNDOTBS1 		      ONLINE
+_SYSSMU13_3978011732$	       UNDOTBS1 		      ONLINE
+
+13 rows selected.
+################################
+-- Source statement
+select 'ALTER SYSTEM SET "_OFFLINE_ROLLBACK_SEGMENTS"='||listagg(''''||segment_name||'''',',') WITHIN GROUP (ORDER BY segment_name)||' scope=spfile;' from dba_rollback_segs where tablespace_name='UNDOTBS1' and status ='NEEDS RECOVERY'; 
+ 
+-- Generated statement 
+ALTER SYSTEM SET "_OFFLINE_ROLLBACK_SEGMENTS"='_SYSSMU20_565759258$','_SYSSMU21_2391030682$','_SYSSMU22_919698808$','_SYSSMU23_1368980304$','_SYSSMU24_3409580981$','_SYSSMU3_3285411314$','_SYSSMU4_4250244621$','_SYSSMU5_750802473$','_SYSSMU6_3167659685$','_SYSSMU7_2435451351$','_SYSSMU8_1462975257$' scope=spfile; 
+--
+select 'drop rollback segment "'||segment_name||'";' from dba_rollback_segs where tablespace_name='UNDOTBS1' and status ='NEEDS RECOVERY';
+ 
+--Generated statements (example)
+drop rollback segment "_SYSSMU3_3285411314$";
+drop rollback segment "_SYSSMU4_4250244621$";
+drop rollback segment "_SYSSMU5_750802473$";
+

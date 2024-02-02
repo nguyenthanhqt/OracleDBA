@@ -1,0 +1,27 @@
+--FILE_NAME_CONVERT
+SQL> ! mkdir -p /u01/app/oracle/oradata/ORCLCDB/PDB2
+--
+CREATE PLUGGABLE DATABASE pdb2 
+ADMIN USER ADMIN IDENTIFIED BY oracle
+ROLES=(DBA)
+DEFAULT TABLESPACE users 
+DATAFILE '/u01/app/oracle/oradata/ORCLCDB/PDB2/user01.dbf'
+SIZE 250M AUTOEXTEND ON
+FILE_NAME_CONVERT = ('/u01/app/oracle/oradata/ORCLCDB/pdbseed/', 
+                     '/u01/app/oracle/oradata/ORCLCDB/PDB2/');
+-- OMF
+SQL> ! mkdir -p /home/oracle/CDB/PDB3
+
+SQL> alter system set db_create_file_dest='/home/oracle/CDB/PDB3';
+
+System altered.
+
+SQL> CREATE PLUGGABLE DATABASE pdb3 
+ADMIN USER ADMIN IDENTIFIED BY oracle
+ROLES=(DBA)
+DEFAULT TABLESPACE users; 
+
+CREATE PLUGGABLE DATABASE algo_plug
+ADMIN USER ADMIN IDENTIFIED BY oracle
+ROLES=(DBA)
+DEFAULT TABLESPACE users; 

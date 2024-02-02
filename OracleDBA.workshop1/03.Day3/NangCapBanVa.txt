@@ -1,0 +1,78 @@
+1/ Download patch từ oracle support
+p34419443_190000_Linux-x86-64.zip 
+=> Chứa patch
+p6880880_190000_Linux-x86-64.zip 
+=> Chứa Opatch
+2/ Unzip trong thu muc /home/oracle
+unzip p6880880_190000_Linux-x86-64.zip
+unzip p6880880_190000_Linux-x86-64.zip
+=> luc nay trong /home/oracle có 2 thu muc: OPatch và 34419443
+3/ Thiết lập môi truong Opatch
+[oracle@localhost ~]$ export PATH=/home/oracle/OPatch:$PATH
+--> check
+[oracle@localhost ~]$ which opatch
+~/OPatch/opatch
+[oracle@localhost ~]$ opatch version
+OPatch Version: 12.2.0.1.36
+
+OPatch succeeded.
+-- Thiet lap moi truong database
+[oracle@localhost ~]$ . oraenv
+ORACLE_SID = [oracle] ? orcl
+The Oracle base remains unchanged with value /u01/app/oracle
+
+4/ shutdown database và listener
+[oracle@localhost ~]$ sqlplus / as sysdba
+
+SQL*Plus: Release 19.0.0.0.0 - Production on Tue Dec 12 15:08:20 2023
+Version 19.3.0.0.0
+
+Copyright (c) 1982, 2019, Oracle.  All rights reserved.
+
+
+Connected to:
+Oracle Database 19c Enterprise Edition Release 19.0.0.0.0 - Production
+Version 19.3.0.0.0
+
+SQL> shutdown immediate;
+-- Tắt listener
+[oracle@localhost ~]$ lsnrctl stop
+
+LSNRCTL for Linux: Version 19.0.0.0.0 - Production on 12-DEC-2023 15:09:03
+
+Copyright (c) 1991, 2019, Oracle.  All rights reserved.
+
+Connecting to (DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=localhost)(PORT=1521)))
+The command completed successfully
+5/ apply patch cho software
+[oracle@localhost ~]$ cd 34419443/
+[oracle@localhost 34419443]$ opatch apply
+Oracle Interim Patch Installer version 12.2.0.1.36
+. . .
+Patching component oracle.precomp.lang, 19.0.0.0.0...
+
+Patching component oracle.jdk, 1.8.0.201.0...
+Patch 34419443 successfully applied.
+Sub-set patch [29517242] has become inactive due to the application of a super-set patch [34419443].
+Please refer to Doc ID 2161861.1 for any possible further required actions.
+Log file location: /u01/app/oracle/product/19.0.0/dbhome_1/cfgtoollogs/opatch/opatch2023-12-12_15-10-24PM_1.log
+
+OPatch succeeded.
+
+6/ start database va listener
+lsnrctl start
+sqlplus / as sysdba
+startup
+alter pluggable database all open;
+
+7/ Apply patch cho database (datapatch hay còn gọi là sqlpatch) 
+ (Neu chỉ cài soft và chưa tạo database thì chỉ cần buoc so 5 là apply patch cho software)
+[oracle@localhost 34419443]$ datapatch -verbose
+SQL Patching tool version 19.17.0.0.0 Production on Tue Dec 12 15:27:20 2023
+Copyright (c) 2012, 2022, Oracle.  All rights reserved.
+
+Log file for this invocation: /u01/app/oracle/cfgtoollogs/sqlpatch/sqlpatch_26716_2023_12_12_15_27_20/sqlpatch_invocation.log
+
+Connecting to database...OK
+ . . .
+SQL Patching tool complete on Tue Dec 12 15:59:08 2023

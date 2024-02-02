@@ -1,0 +1,112 @@
+[oracle@primary ~]$ sqlplus / as sysdba
+
+SQL*Plus: Release 11.2.0.1.0 Production on Fri Jan 4 13:38:16 2013
+
+Copyright (c) 1982, 2009, Oracle.  All rights reserved.
+
+
+Connected to:
+Oracle Database 11g Enterprise Edition Release 11.2.0.1.0 - Production
+With the Partitioning, Automatic Storage Management, OLAP, Data Mining
+and Real Application Testing options
+
+SQL> alter database add supplemental log data;
+
+Database altered.
+
+SQL> alter database add supplemental log data (primary key) columns;
+
+Database altered.
+
+SQL> grant SELECT ANY TRANSACTION to hr;
+
+Grant succeeded.
+
+SQL> exit
+Disconnected from Oracle Database 11g Enterprise Edition Release 11.2.0.1.0 - Production
+With the Partitioning, Automatic Storage Management, OLAP, Data Mining
+and Real Application Testing options
+[oracle@primary ~]$
+
+[oracle@localhost ~]$ sqlplus hr/hr
+
+SQL*Plus: Release 12.1.0.1.0 Production on Fri Jan 2 02:11:14 2009
+
+Copyright (c) 1982, 2013, Oracle.  All rights reserved.
+
+Last Successful login time: Fri Jan 02 2009 02:00:35 +07:00
+
+Connected to:
+Oracle Database 12c Enterprise Edition Release 12.1.0.1.0 - 64bit Production
+With the Partitioning, Automatic Storage Management, OLAP, Advanced Analytics
+and Real Application Testing options
+
+SQL> update locations set STREET_ADDRESS='AAA' where LOCATION_ID=3200;
+
+1 row updated.
+
+SQL> delete departments where department_id=270;
+
+1 row deleted.
+
+SQL> insert into regions values(5,'asean');
+
+1 row created.
+
+SQL> commit;
+
+Commit complete.
+
+SQL> desc FLASHBACK_TRANSACTION_QUERY
+ Name                                      Null?    Type
+ ----------------------------------------- -------- ----------------------------
+ XID                                                RAW(8)
+ START_SCN                                          NUMBER
+ START_TIMESTAMP                                    DATE
+ COMMIT_SCN                                         NUMBER
+ COMMIT_TIMESTAMP                                   DATE
+ LOGON_USER                                         VARCHAR2(30)
+ UNDO_CHANGE#                                       NUMBER
+ OPERATION                                          VARCHAR2(32)
+ TABLE_NAME                                         VARCHAR2(256)
+ TABLE_OWNER                                        VARCHAR2(32)
+ ROW_ID                                             VARCHAR2(19)
+ UNDO_SQL                                           VARCHAR2(4000)
+
+SQL> select xid from FLASHBACK_TRANSACTION_QUERY where table_name='LOCATIONS';
+
+
+XID
+----------------
+0700090043050000
+
+SQL> SQL> select commit_scn, operation, row_id, undo_sql
+    from FLASHBACK_TRANSACTION_QUERY
+    where xid = '03000E00630B0000'
+    order by commit_scn;  2    3    4
+
+COMMIT_SCN OPERATION                        ROW_ID
+---------- -------------------------------- -------------------
+UNDO_SQL
+--------------------------------------------------------------------------------
+   2005698 INSERT                           AAAWWHAAKAAAACPAAA
+delete from "HR"."REGIONS" where ROWID = 'AAAWWHAAKAAAACPAAA';
+
+   2005698 BEGIN
+
+
+   2005698 UPDATE                           AAAWWLAAKAAAACdAAW
+update "HR"."LOCATIONS" set "STREET_ADDRESS" = 'Mariano Escobedo 9991' where ROW
+ID = 'AAAWWLAAKAAAACdAAW';
+
+COMMIT_SCN OPERATION                        ROW_ID
+---------- -------------------------------- -------------------
+UNDO_SQL
+--------------------------------------------------------------------------------
+
+   2005698 DELETE                           AAAWWOAAKAAAACtAAa
+insert into "HR"."DEPARTMENTS"("DEPARTMENT_ID","DEPARTMENT_NAME","MANAGER_ID","L
+OCATION_ID") values ('270','Payroll',NULL,'1700');
+
+
+SQL>

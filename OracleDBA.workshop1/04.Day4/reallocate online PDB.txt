@@ -1,0 +1,115 @@
+-- Kiem tra dieu kien de reallocate 1 PDB online la:
+1/ CDB la local undo mode:
+SET LINES 333
+COL PROPERTY_NAME FOR A21
+COL PROPERTY_VALUE FOR A15
+COL DESCRIPTION FOR A35
+SELECT * FROM DATABASE_PROPERTIES WHERE PROPERTY_NAME='LOCAL_UNDO_ENABLED';
+--
+PROPERTY_NAME         PROPERTY_VALUE  DESCRIPTION
+--------------------- --------------- -----------------------------------
+LOCAL_UNDO_ENABLED    TRUE            true if local undo is enabled
+2/ The remote va local PDBs trong che do archivelog mode. (Thuc hien tren ca 2 node)
+SQL> shutdown immediate;
+Database closed.
+Database dismounted.
+ORACLE instance shut down.
+SQL> startup mount;
+ORACLE instance started.
+
+Total System Global Area 1073738488 bytes
+Fixed Size                  9143032 bytes
+Variable Size             964689920 bytes
+Database Buffers           96468992 bytes
+Redo Buffers                3436544 bytes
+Database mounted.
+SQL> alter database archivelog;
+
+Database altered.
+
+SQL> alter database open;
+
+Database altered.
+
+SQL> archive log list;
+Database log mode              Archive Mode
+Automatic archival             Enabled
+Archive destination            /u01/app/oracle/product/19.3.0/dbhome_1/dbs/arch
+Oldest online log sequence     1119
+Next log sequence to archive   1121
+Current log sequence           1121
+-- Thuc hien reallocate voi moi truong nhu sau:
+Source: RMTCDB
+SQL> show pdbs
+
+    CON_ID CON_NAME                       OPEN MODE  RESTRICTED
+---------- ------------------------------ ---------- ----------
+         2 PDB$SEED                       READ ONLY  NO
+         3 PDB1                           MOUNTED
+Dest: CDBTEST
+SQL> show pdbs
+
+    CON_ID CON_NAME                       OPEN MODE  RESTRICTED
+---------- ------------------------------ ---------- ----------
+         2 PDB$SEED                       READ ONLY  NO
+1/ Tao common user trong Source:
+CREATE USER c##remote_clone_user IDENTIFIED BY oracle CONTAINER=ALL;
+GRANT CREATE SESSION, CREATE PLUGGABLE DATABASE TO c##remote_clone_user CONTAINER=ALL;
+GRANT SYSOPER TO c##remote_clone_user CONTAINER=ALL;
+2/ open pdb o source
+SQL> show pdbs
+
+    CON_ID CON_NAME                       OPEN MODE  RESTRICTED
+---------- ------------------------------ ---------- ----------
+         2 PDB$SEED                       READ ONLY  NO
+         3 PDB1                           MOUNTED
+         4 PDB2                           MOUNTED
+SQL> alter pluggable database pdb1 open;
+
+Pluggable database altered.
+
+3/ Dung dbca o Dest (CDBTEST) nhu sau:
+dbca -silent \
+  -relocatePDB \
+  -pdbName pdb1 \
+  -sourceDB CDBTEST \
+  -remotePDBName pdb1 \
+  -remoteDBConnString localhost:1521/RMTCDB \
+  -remoteDBSYSDBAUserName sys \
+  -remoteDBSYSDBAUserPassword oracle \
+  -dbLinkUsername c##remote_clone_user \
+  -dbLinkUserPassword oracle
+--
+Prepare for db operation
+50% complete
+Create pluggable database using relocate PDB operation
+100% complete
+Pluggable database "pdb1" plugged successfully.
+Look at the log file "/u01/app/oracle/cfgtoollogs/dbca/CDBTEST/pdb1/CDBTEST.log" for further details.
+-- Kiem tra o Dest
+[oracle@host02 ~]$ . oraenv
+ORACLE_SID = [CDBTEST] ? 
+The Oracle base remains unchanged with value /u01/app/oracle
+[oracle@host02 ~]$ sqlplus / as sysdba
+
+SQL*Plus: Release 19.0.0.0.0 - Production on Thu Oct 13 09:51:39 2022
+Version 19.3.0.0.0
+
+Copyright (c) 1982, 2019, Oracle.  All rights reserved.
+
+
+Connected to:
+Oracle Database 19c Enterprise Edition Release 19.0.0.0.0 - Production
+Version 19.3.0.0.0
+
+SQL> show pdbs
+
+    CON_ID CON_NAME                       OPEN MODE  RESTRICTED
+---------- ------------------------------ ---------- ----------
+         2 PDB$SEED                       READ ONLY  NO
+         3 PDB1                           READ WRITE NO
+
+
+
+
+

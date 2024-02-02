@@ -1,0 +1,4 @@
+fgrep "23-JUL-2018 10:" listener.log | fgrep "establish" | awk '{ print $1 " " $2 }' | awk -F: '{ print $1 ":" $2 }' | sort | uniq -c
+
+--listener2.log
+fgrep "06-JAN-2024 16:" listener2.log | fgrep "establish" | awk '{ print $1 " " $2 }' | awk -F: '{ print $1 ":" $2 }' | sort | uniq -c

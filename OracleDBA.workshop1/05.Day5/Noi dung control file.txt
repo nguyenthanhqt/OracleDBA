@@ -1,0 +1,10 @@
+SQL> ORADEBUG setmypid;
+Statement processed.
+SQL> ORADEBUG UNLIMIT;
+Statement processed.
+SQL> alter session set events 'immediate trace name controlf level 9';
+
+Session altered.
+
+SQL> oradebug tracefile_name
+/u01/app/oracle/diag/rdbms/orclcdb/orclcdb/trace/orclcdb_ora_16613.trc

@@ -1,0 +1,42 @@
+B1:
+Set up OS (cài các package cần thiết cho máy ảo để cài Oracle soft). 
+-	Copy oracle-database-preinstall-19c-1.0-1.el7.x86_64.rpm vào VM
+-	+ Neu co internet
+-	yum install -y oracle-database-preinstall-19c
+-	+ Khong co internet (insert CD V1009690-01.iso vào lại)
+-	cd /run/media/admin/OL-7.9\ Server.x86_64/Packages/
+-	rpm -ivh libaio-0.3.109-13.el7.x86_64.rpm
+-	rpm -ivh libaio-devel-0.3.109-13.el7.x86_64.rpm
+-	rpm -ivh ksh-20120801-142.0.1.el7.x86_64.rpm
+
+B2: disable selinux
+B3: disable firewall
+systemctl stop firewalld
+systemctl disable firewalld
+
+B4:
+mkdir -p /u01/app/oracle/product/19.0.0/dbhome_1
+chown -R oracle:oinstall /u01
+chmod -R 775 /u01
+
+B5: tao thu muc chua soft
+
+
+B5:Cai
+oracle/oracle
+
+B6: Tạo database 
+database nam: oracledb
+pass sys, system /oracle 
+
+B7: tạo PDB
+Name: orcl_plug/
+username: pdbadmin/oracle 
+
+B7: Tạo netmgr;
+netmgr
+
+B8: tao sample
+perl -p -i.bak -e 's#_SUB_CWD_#'$(pwd)'#g' *.sql */*.sql */*.dat
+
+@mksample oracle oracle hr oe pm ix sh bi users temp /tmp/ oraclesv01:1521/orcl_plug 
