@@ -198,6 +198,13 @@ CMCTL:cman_localhost> shutdown abort
 The command completed successfully.
 CMCTL:cman_localhost> exit
 
+-- Muilty plexing
+alter system set dispatchers="(PROTOCOL=ctp)(MULTYPLEX=on)";
+
+ps -ef | grep orclcdb
+
+
+
 
 
 
